@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriAI</title>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+import { useState, useEffect, useRef } from "react";
+
+// ─── Icon system — simple 2D monochrome SVG icons ───────────────
+function Icon({ name, size = 18, color = "currentColor", strokeWidth = 1.8 }) {
+  const s = { display: "inline-block", flexShrink: 0 };
+  const p = { fill: "none", stroke: color, strokeWidth, strokeLinecap: "round", strokeLinejoin: "round" };
+  const paths = {
+    camera:     <><path {...p} d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle {...p} cx="12" cy="13" r="4"/></>,
+    food:       <><path {...p} d="M18 8h1a4 4 0 0 1 0 8h-1"/><path {...p} d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line {...p} x1="6" y1="1" x2="6" y2="4"/><line {...p} x1="10" y1="1" x2="10" y2="4"/><line {...p} x1="14" y1="1" x2="14" y2="4"/></>,
+    steps:      <><path {...p} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></>,
+    run:        <><circle {...p} cx="12" cy="4" r="2"/><path {...p} d="M15 8l-3 3-2 5H7m8-8l3 2 2 4M9 11l-3 4"/></>,
+    water:      <><path {...p} d="M12 2C6 8 4 12 4 15a8 8 0 0016 0c0-3-2-7-8-13z"/></>,
+    scale:      <><path {...p} d="M12 3v1m0 16v1M4.22 4.22l.7.7m14.14 14.14l.7.7M1 12h2m18 0h2M4.22 19.78l.7-.7M18.36 5.64l.7-.7"/><circle {...p} cx="12" cy="12" r="4"/></>,
+    target:     <><circle {...p} cx="12" cy="12" r="10"/><circle {...p} cx="12" cy="12" r="6"/><circle {...p} cx="12" cy="12" r="2"/></>,
+    flame:      <><path {...p} d="M12 2c0 6-6 8-6 14a6 6 0 0012 0c0-6-6-8-6-14z"/><path {...p} d="M12 12c0 3-2 4-2 6a2 2 0 004 0c0-2-2-3-2-6z"/></>,
+    calendar:   <><rect {...p} x="3" y="4" width="18" height="18" rx="2"/><line {...p} x1="16" y1="2" x2="16" y2="6"/><line {...p} x1="8" y1="2" x2="8" y2="6"/><line {...p} x1="3" y1="10" x2="21" y2="10"/></>,
+    dna:        <><path {...p} d="M2 15c3.33-3 6.67-3 10 0s6.67 3 10 0M2 9c3.33 3 6.67 3 10 0s6.67-3 10 0M2 9V6m20 0v3M2 15v3m20-3v3"/></>,
+    flag:       <><path {...p} d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line {...p} x1="4" y1="22" x2="4" y2="15"/></>,
+    scan:       <><path {...p} d="M3 9V5a2 2 0 012-2h4M3 15v4a2 2 0 002 2h4m6-18h4a2 2 0 012 2v4m0 6v4a2 2 0 01-2 2h-4"/><line {...p} x1="2" y1="12" x2="22" y2="12"/></>,
+    plus:       <><line {...p} x1="12" y1="5" x2="12" y2="19"/><line {...p} x1="5" y1="12" x2="19" y2="12"/></>,
+    check:      <><polyline {...p} points="20 6 9 17 4 12"/></>,
+    edit:       <><path {...p} d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path {...p} d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+    user:       <><path {...p} d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle {...p} cx="12" cy="7" r="4"/></>,
+    trending:   <><polyline {...p} points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline {...p} points="17 6 23 6 23 12"/></>,
+    weight:     <><circle {...p} cx="12" cy="12" r="10"/><path {...p} d="M8 12h8M12 8v8"/></>,
+    breakfast:  <><path {...p} d="M18 8h1a4 4 0 010 8h-1"/><path {...p} d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></>,
+    sun:        <><circle {...p} cx="12" cy="12" r="5"/><line {...p} x1="12" y1="1" x2="12" y2="3"/><line {...p} x1="12" y1="21" x2="12" y2="23"/><line {...p} x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line {...p} x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line {...p} x1="1" y1="12" x2="3" y2="12"/><line {...p} x1="21" y1="12" x2="23" y2="12"/><line {...p} x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line {...p} x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>,
+    moon:       <><path {...p} d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></>,
+    apple:      <><path {...p} d="M12 2a3 3 0 013 3c0 1.5-1 2.5-1 2.5H10S9 6.5 9 5a3 3 0 013-3z"/><path {...p} d="M5 8h14l-1.5 11a2 2 0 01-2 1.5H8.5a2 2 0 01-2-1.5L5 8z"/></>,
+    activity:   <><polyline {...p} points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+    star:       <><polygon {...p} points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={s} xmlns="http://www.w3.org/2000/svg">
+      {paths[name] || <circle cx="12" cy="12" r="10" stroke={color} strokeWidth={strokeWidth} fill="none"/>}
+    </svg>
+  );
+}
+
+const STORE_KEY = "nutriai_app";
+
+async function saveData(d) { try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); } catch (_) {} }
+async function loadData() { try { const r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : null; } catch (_) { return null; } }
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function calcAge(dob) {
+  const b = new Date(dob), now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
+  return age;
+}
+
+function calcPlan(p) {
+  // Mifflin-St Jeor BMR
+  const bmr = p.gender === "male"
+    ? 10 * p.weightKg + 6.25 * p.heightCm - 5 * p.age + 5
+    : 10 * p.weightKg + 6.25 * p.heightCm - 5 * p.age - 161;
+  const tdee = Math.round(bmr * p.actMult);
+  const totalDeficit = (p.weightKg - p.targetKg) * 7700;
+  const dailyDeficit = Math.round(totalDeficit / (p.months * 30));
+  const recommended = Math.max(1200, Math.round(tdee - dailyDeficit));
+  const gentle     = Math.max(1200, Math.round(tdee - dailyDeficit * 0.6));
+  const aggressive = Math.max(1200, Math.round(tdee - dailyDeficit * 1.4));
+  const bmi = Math.round((p.weightKg / Math.pow(p.heightCm / 100, 2)) * 10) / 10;
+  const protein = Math.round(recommended * 0.30 / 4);
+  const carbs   = Math.round(recommended * 0.40 / 4);
+  const fat     = Math.round(recommended * 0.30 / 9);
+  const deadline = new Date();
+  deadline.setMonth(deadline.getMonth() + p.months);
+  return { bmr: Math.round(bmr), tdee, dailyDeficit, recommended, gentle, aggressive, bmi, protein, carbs, fat, deadline: deadline.toISOString() };
+}
+
+// Steps → calories burned: ~0.04 kcal per step (average 70kg person)
+function stepCalsBurned(steps) { return Math.round(steps * 0.04); }
+// Water goal: 8 glasses = 2000ml
+const WATER_GOAL_ML = 2000;
+const GLASS_ML = 250;
+
+const ACTIVITIES = [
+  { label: "Sedentary",         sub: "Desk job, little exercise",      mult: 1.2   },
+  { label: "Lightly active",    sub: "Light exercise 1–3 days/week",   mult: 1.375 },
+  { label: "Moderately active", sub: "Moderate exercise 3–5 days/week",mult: 1.55  },
+  { label: "Very active",       sub: "Hard exercise 6–7 days/week",    mult: 1.725 },
+  { label: "Athlete",           sub: "Physical job or twice/day",      mult: 1.9   },
+];
+
+const TIMELINES = [
+  { label: "1 month",   sub: "Aggressive — strong deficit",   months: 1, icon: "flame" },
+  { label: "3 months",  sub: "Recommended — healthy pace",    months: 3, icon: "target" },
+  { label: "6 months",  sub: "Gradual — easy to maintain",    months: 6, icon: "🌱" },
+];
+
+const EXERCISES = [
+  { label: "Running",       icon: "🏃", met: 9.8  },
+  { label: "Walking",       icon: "🚶", met: 3.5  },
+  { label: "Cycling",       icon: "🚴", met: 7.5  },
+  { label: "Swimming",      icon: "🏊", met: 8.0  },
+  { label: "Weight training",icon: "🏋", met: 5.0  },
+  { label: "Yoga",          icon: "🧘", met: 2.5  },
+  { label: "HIIT",          icon: "⚡", met: 10.0 },
+  { label: "Football",      icon: "⚽", met: 7.0  },
+  { label: "Basketball",    icon: "🏀", met: 7.0  },
+  { label: "Other",         icon: "💪", met: 5.0  },
+];
+// MET formula: cals = MET * weightKg * hours
+function exerciseCalsBurned(met, mins, weightKg) { return Math.round(met * weightKg * (mins / 60)); }
+
+const MEAL_COLORS = { breakfast: "#f97316", lunch: "#34d399", dinner: "rgba(255,255,255,0.45)", snack: "#f87171" };
+
+const AVATARS = ["👤","👨","👩","🧑","👦","👧","🧔","👱","🧒","🦸","🧙","🧝"];
+const AVATAR_COLORS = ["#f97316","#34d399","#f87171","rgba(255,255,255,0.2)","#ea580c","#34d399","#f97316","#f87171"];
+
+
+// ─── Gamification ───────────────────────────────────────────────
+const XP_KEY = "nutriai_xp";
+const CHALLENGES_KEY = "nutriai_challenges";
+
+const LEVELS = [
+  { name: "Beginner",   min: 0,    color: "#94a3b8", emoji: "🌱" },
+  { name: "Motivated",  min: 200,  color: "#34d399", emoji: "⚡" },
+  { name: "Consistent", min: 500,  color: "#60a5fa", emoji: "💪" },
+  { name: "Dedicated",  min: 1000, color: "#f97316", emoji: "🔥" },
+  { name: "Pro",        min: 2000, color: "#a78bfa", emoji: "🏆" },
+  { name: "Elite",      min: 4000, color: "#f87171", emoji: "👑" },
+];
+
+function getLevel(xp) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].min) return { ...LEVELS[i], index: i, next: LEVELS[i + 1] || null };
+  }
+  return { ...LEVELS[0], index: 0, next: LEVELS[1] };
+}
+
+function getDailyChallenges(dateStr) {
+  // Seeded by date so challenges are same for everyone on same day
+  const seed = dateStr.replace(/-/g, "").split("").reduce((a, c) => a * 31 + c.charCodeAt(0), 0);
+  const rng = (n) => { const x = Math.sin(seed + n) * 10000; return x - Math.floor(x); };
+  const ALL_CHALLENGES = [
+    { id: "log_breakfast",   label: "Log breakfast",           desc: "Log any food before noon",           xp: 30,  icon: "☀️"  },
+    { id: "log_3_meals",     label: "Log 3 meals",             desc: "Log breakfast, lunch & dinner",      xp: 60,  icon: "🍽️"  },
+    { id: "hit_water",       label: "Hit water goal",          desc: "Drink 8 glasses today",              xp: 40,  icon: "💧"  },
+    { id: "hit_steps_5k",    label: "Walk 5,000 steps",        desc: "Log at least 5,000 steps",           xp: 35,  icon: "👟"  },
+    { id: "hit_steps_10k",   label: "Walk 10,000 steps",       desc: "Log at least 10,000 steps",         xp: 70,  icon: "🏃"  },
+    { id: "stay_on_goal",    label: "Stay within calories",    desc: "Log meals within your daily goal",   xp: 50,  icon: "🎯"  },
+    { id: "log_exercise",    label: "Log a workout",           desc: "Add any exercise today",             xp: 45,  icon: "🏋️"  },
+    { id: "protein_goal",    label: "Hit protein target",      desc: "Reach your daily protein goal",      xp: 40,  icon: "💪"  },
+    { id: "log_5_foods",     label: "Log 5 food items",        desc: "Track 5 different items today",      xp: 35,  icon: "📋"  },
+    { id: "open_streak",     label: "Keep your streak alive",  desc: "Log anything to keep your streak",  xp: 25,  icon: "🔥"  },
+  ];
+  const idToNum = (id) => id.split("").reduce((a, c) => a * 17 + c.charCodeAt(0), 0);
+  const shuffled = [...ALL_CHALLENGES].sort((a, b) => rng(idToNum(a.id)) - rng(idToNum(b.id)));
+  return shuffled.slice(0, 3);
+}
+
+function checkChallenge(id, { log, activityData, profile, today }) {
+  const todayLog = log[today] || [];
+  const act = activityData[today] || {};
+  const meals = new Set(todayLog.map(e => e.meal));
+  const totalCal = todayLog.reduce((s, e) => s + e.calories, 0);
+  const totalP = todayLog.reduce((s, e) => s + e.protein, 0);
+  switch(id) {
+    case "log_breakfast":  return meals.has("breakfast");
+    case "log_3_meals":    return meals.has("breakfast") && meals.has("lunch") && meals.has("dinner");
+    case "hit_water":      return (act.waterMl || 0) >= 2000;
+    case "hit_steps_5k":   return (act.steps || 0) >= 5000;
+    case "hit_steps_10k":  return (act.steps || 0) >= 10000;
+    case "stay_on_goal":   return totalCal > 0 && totalCal <= profile.goal;
+    case "log_exercise":   return (act.exercises || []).length > 0;
+    case "protein_goal":   return totalP >= (profile.protein || 0);
+    case "log_5_foods":    return todayLog.length >= 5;
+    case "open_streak":    return todayLog.length > 0;
+    default: return false;
+  }
+}
+
+async function loadXPData() {
+  try { const r = localStorage.getItem(XP_KEY); return r ? JSON.parse(r) : { xp: 0, history: [] }; } catch(_) { return { xp: 0, history: [] }; }
+}
+async function saveXPData(d) { try { localStorage.setItem(XP_KEY, JSON.stringify(d)); } catch(_) {} }
+async function loadChallengeData() {
+  try { const r = localStorage.getItem(CHALLENGES_KEY); return r ? JSON.parse(r) : {}; } catch(_) { return {}; }
+}
+async function saveChallengeData(d) { try { localStorage.setItem(CHALLENGES_KEY, JSON.stringify(d)); } catch(_) {} }
+
+// ─── tiny UI primitives ───────────────────────────────────────
+function Ring({ pct = 0, size = 120, strokeW = 10, color = "#f97316", bg = "rgba(255,255,255,0.08)", children }) {
+  const r = (size - strokeW) / 2;
+  const circ = 2 * Math.PI * r;
+  const off = circ * (1 - Math.min(1, pct / 100));
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)", display: "block" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={bg} strokeWidth={strokeW} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeW}
+          strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off}
+          style={{ transition: "stroke-dashoffset 0.9s ease" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ProgressBar({ pct, color = "#f97316", h = 7 }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden", height: h }}>
+      <div style={{ width: `${Math.min(100, Math.max(0, pct))}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.8s ease" }} />
+    </div>
+  );
+}
+
+function Input({ label, ...props }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>{label}</div>}
+      <input {...props} style={{
+        width: "100%", padding: "13px 16px", borderRadius: 12,
+        border: "1.5px solid rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.05)", color: "#fff",
+        fontSize: 15, outline: "none", boxSizing: "border-box",
+        fontFamily: "inherit", colorScheme: "dark",
+        ...(props.style || {})
+      }} />
+    </div>
+  );
+}
+
+function PrimaryBtn({ children, onClick, style = {} }) {
+  return (
+    <button onClick={onClick} style={{
+      width: "100%", padding: "15px 20px", borderRadius: 14, border: "none",
+      background: "linear-gradient(135deg, #f97316, #ea580c)",
+      color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer",
+      boxShadow: "0 4px 20px rgba(249,115,22,0.4)", letterSpacing: "0.02em",
+      ...style
+    }}>{children}</button>
+  );
+}
+
+function GhostBtn({ children, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      width: "100%", padding: "12px", background: "none", border: "none",
+      color: "rgba(255,255,255,0.55)", fontSize: 13, cursor: "pointer", marginTop: 6
+    }}>{children}</button>
+  );
+}
+
+function Chip({ active, onClick, children, style = {} }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: "10px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+      background: active ? "rgba(249,115,22,0.18)" : "rgba(255,255,255,0.05)",
+      borderLeft: `3px solid ${active ? "#f97316" : "transparent"}`,
+      color: "#f0f0f0", fontSize: 14, textAlign: "left", width: "100%",
+      transition: "all 0.15s", ...style
+    }}>{children}</button>
+  );
+}
+
+function Seg({ options, value, onChange }) {
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      {options.map(o => (
+        <button key={o.value} onClick={() => onChange(o.value)} style={{
+          flex: 1, padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
+          background: value === o.value ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.05)",
+          color: value === o.value ? "#f97316" : "rgba(255,255,255,0.55)",
+          fontSize: 13, fontWeight: 600, transition: "all 0.15s",
+          outline: value === o.value ? "1.5px solid #f97316" : "1.5px solid transparent"
+        }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+function StepShell({ step, total, title, sub, children, onNext, onBack, nextLabel = "Continue →" }) {
+  const pct = (step / total) * 100;
+  return (
+    <div style={{ minHeight: "100vh", background: "#0f0f11", display: "flex", flexDirection: "column", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, display: "flex", flexDirection: "column", padding: "0 22px 36px" }}>
+        {/* Progress */}
+        <div style={{ padding: "18px 0 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Step {step} of {total}</span>
+            <span style={{ fontSize: 11, color: "#f97316", fontWeight: 600 }}>{Math.round(pct)}%</span>
+          </div>
+          <div style={{ height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#f97316,#ea580c)", borderRadius: 99, transition: "width 0.5s ease" }} />
+          </div>
+        </div>
+        {/* Header */}
+        <div style={{ padding: "16px 0 22px" }}>
+          <div style={{ fontSize: 11, color: "#f97316", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Step {step}</div>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 6px", letterSpacing: "-0.5px", lineHeight: 1.2 }}>{title}</h2>
+          {sub && <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", margin: 0, lineHeight: 1.5 }}>{sub}</p>}
+        </div>
+        {/* Body */}
+        <div style={{ flex: 1 }}>{children}</div>
+        {/* Nav */}
+        <div style={{ paddingTop: 20 }}>
+          <PrimaryBtn onClick={onNext}>{nextLabel}</PrimaryBtn>
+          {onBack && <GhostBtn onClick={onBack}>← Back</GhostBtn>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════
+// ONBOARDING STEPS
+// ════════════════════════════════════════════
+
+function Step1({ data, set, onNext, onBack }) {
+  const [err, setErr] = useState("");
+  const go = () => { if (!data.name.trim()) { setErr("Please enter your name"); return; } setErr(""); onNext(); };
+  return (
+    <StepShell step={1} total={5} title="Let's meet you" sub="We'll personalise your plan around your profile" onNext={go} onBack={onBack}>
+      <Input label="First name" placeholder="e.g. Sarah" value={data.name}
+        onChange={e => { set("name", e.target.value); setErr(""); }} />
+      {err && <div style={{ color: "#f87171", fontSize: 12, marginTop: -10, marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 9 }}>Gender</div>
+        <Seg value={data.gender} onChange={v => set("gender", v)}
+          options={[{ value: "female", label: "Female" }, { value: "male", label: "Male" }, { value: "other", label: "Other" }]} />
+      </div>
+    </StepShell>
+  );
+}
+
+function Step2({ data, set, onNext, onBack }) {
+  const [err, setErr] = useState("");
+  const age = data.dob ? calcAge(data.dob) : null;
+  const go = () => {
+    if (!data.dob || !age || age < 10 || age > 110) { setErr("Please enter a valid date of birth"); return; }
+    setErr(""); onNext();
+  };
+  return (
+    <StepShell step={2} total={5} title="When were you born?" sub="Age changes your metabolic rate calculation" onNext={go} onBack={onBack}>
+      <Input label="Date of birth" type="date" value={data.dob} max={todayStr()}
+        onChange={e => { set("dob", e.target.value); setErr(""); }} />
+      {err && <div style={{ color: "#f87171", fontSize: 12, marginTop: -10, marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
+      {age !== null && !err && (
+        <div style={{ background: "rgba(249,115,22,0.1)", border: "1.5px solid rgba(249,115,22,0.25)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, marginTop: 4 }}>
+          <Icon name="calendar" size={28} color="#f97316"/>
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0" }}>{age} years old</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+              {new Date(data.dob).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            </div>
+          </div>
+        </div>
+      )}
+    </StepShell>
+  );
+}
+
+function Step3({ data, set, onNext, onBack }) {
+  const [unit, setUnit] = useState("ft");
+  const [ft, setFt] = useState("");
+  const [inch, setInch] = useState("");
+  const [cm, setCm] = useState("");
+  const [err, setErr] = useState("");
+
+  const fromFtIn = (f, i) => {
+    const v = (parseFloat(f) || 0) * 30.48 + (parseFloat(i) || 0) * 2.54;
+    if (v > 0) set("heightCm", Math.round(v));
+  };
+
+  const go = () => {
+    if (!data.heightCm || data.heightCm < 100 || data.heightCm > 250) { setErr("Please enter a valid height"); return; }
+    setErr(""); onNext();
+  };
+
+  const display = data.heightCm
+    ? `${Math.floor(data.heightCm / 30.48)}ft ${Math.round((data.heightCm / 2.54) % 12)}in = ${data.heightCm} cm`
+    : "";
+
+  return (
+    <StepShell step={3} total={5} title="How tall are you?" sub="Used to calculate your BMI and daily energy needs" onNext={go} onBack={onBack}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 9 }}>Unit</div>
+        <Seg value={unit} onChange={v => { setUnit(v); setErr(""); }}
+          options={[{ value: "ft", label: "ft & in" }, { value: "cm", label: "cm" }]} />
+      </div>
+
+      {unit === "ft" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <Input label="Feet" type="number" min="3" max="8" placeholder="0" value={ft}
+            onChange={e => { setFt(e.target.value); fromFtIn(e.target.value, inch); setErr(""); }} />
+          <Input label="Inches" type="number" min="0" max="11" placeholder="0" value={inch}
+            onChange={e => { setInch(e.target.value); fromFtIn(ft, e.target.value); setErr(""); }} />
+        </div>
+      ) : (
+        <Input label="Centimetres" type="number" min="100" max="250" placeholder="155" value={cm}
+          onChange={e => { setCm(e.target.value); const v = parseFloat(e.target.value); if (v > 0) set("heightCm", Math.round(v)); setErr(""); }} />
+      )}
+
+      {display && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: -8, marginBottom: 12 }}>{display}</div>}
+      {err && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
+    </StepShell>
+  );
+}
+
+function Step4({ data, set, onNext, onBack }) {
+  const [errs, setErrs] = useState({});
+  const go = () => {
+    const e = {}; const cw = parseFloat(data.weightKg); const tw = parseFloat(data.targetKg);
+    if (!cw || cw < 30) e.cw = "Enter current weight";
+    if (!tw || tw < 30) e.tw = "Enter target weight";
+    if (cw && tw && cw <= tw) e.tw = "Target must be lower than current for weight loss";
+    if (Object.keys(e).length) { setErrs(e); return; }
+    setErrs({}); onNext();
+  };
+  const cw = parseFloat(data.weightKg), tw = parseFloat(data.targetKg);
+  const diff = cw && tw && cw > tw ? (cw - tw).toFixed(1) : null;
+
+  return (
+    <StepShell step={4} total={5} title="Weight & goal" sub="We'll compute your exact daily calorie target" onNext={go} onBack={onBack}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div>
+          <Input label="Current weight (kg)" type="number" min="30" max="300" step="0.1" placeholder="0"
+            value={data.weightKg === 0 ? "" : (data.weightKg ?? "")}
+            onChange={e => { set("weightKg", e.target.value); setErrs(p => ({ ...p, cw: "" })); }} />
+          {errs.cw && <div style={{ color: "#f87171", fontSize: 11, marginTop: -12, marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{errs.cw}</div>}
+        </div>
+        <div>
+          <Input label="Target weight (kg)" type="number" min="30" max="300" step="0.1" placeholder="0"
+            value={data.targetKg === 0 ? "" : (data.targetKg ?? "")}
+            onChange={e => { set("targetKg", e.target.value); setErrs(p => ({ ...p, tw: "" })); }} />
+          {errs.tw && <div style={{ color: "#f87171", fontSize: 11, marginTop: -12, marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{errs.tw}</div>}
+        </div>
+      </div>
+
+      {diff && (
+        <div style={{ background: "rgba(52,211,153,0.1)", border: "1.5px solid rgba(52,211,153,0.25)", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#34d399", marginBottom: 16 }}>
+          Goal: lose <strong style={{ color: "#34d399" }}>{diff} kg</strong> total
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Timeline</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {TIMELINES.map(t => (
+          <Chip key={t.months} active={data.months === t.months} onClick={() => set("months", t.months)}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Icon name={t.icon} size={20} color={data.months === t.months ? "#f97316" : "rgba(255,255,255,0.4)"}/>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{t.label}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>{t.sub}</div>
+              </div>
+              <div style={{ marginLeft: "auto", width: 18, height: 18, borderRadius: "50%",
+                background: data.months === t.months ? "#f97316" : "transparent",
+                border: data.months === t.months ? "none" : "1.5px solid rgba(255,255,255,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {data.months === t.months && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
+              </div>
+            </div>
+          </Chip>
+        ))}
+      </div>
+    </StepShell>
+  );
+}
+
+function Step5({ data, set, onNext, onBack }) {
+  return (
+    <StepShell step={5} total={5} title="How active are you?" sub="Determines your total daily energy expenditure (TDEE)" onNext={onNext} onBack={onBack} nextLabel="Calculate my plan ✨">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {ACTIVITIES.map(a => (
+          <Chip key={a.mult} active={data.actMult === a.mult} onClick={() => { set("actMult", a.mult); set("actLabel", a.label); }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{a.label}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>{a.sub}</div>
+              </div>
+              <div style={{ fontSize: 12, color: "#f97316", fontWeight: 700 }}>×{a.mult}</div>
+            </div>
+          </Chip>
+        ))}
+      </div>
+    </StepShell>
+  );
+}
+
+// ════════════════════════════════════════════
+// RESULTS SCREEN
+// ════════════════════════════════════════════
+function Results({ profile, plan, onStart }) {
+  const [chosen, setChosen] = useState("recommended");
+  const goal = plan[chosen];
+  const lossKg = (profile.weightKg - profile.targetKg).toFixed(1);
+  const bmiLabel = plan.bmi < 18.5 ? "Underweight" : plan.bmi < 25 ? "Normal weight" : plan.bmi < 30 ? "Overweight" : "Obese";
+  const bmiColor = plan.bmi < 18.5 ? "rgba(255,255,255,0.5)" : plan.bmi < 25 ? "#34d399" : plan.bmi < 30 ? "#f97316" : "#f87171";
+  const ringPct = Math.round(goal / plan.tdee * 100);
+
+  const milestones = [{ month: 0, label: "Start", weight: profile.weightKg, icon: "●" }];
+  const perMonth = (profile.weightKg - profile.targetKg) / profile.months;
+  for (let m = 1; m <= profile.months; m++) {
+    const d = new Date(); d.setMonth(d.getMonth() + m);
+    milestones.push({ month: m, label: d.toLocaleDateString("en-GB", { month: "short", year: "numeric" }), weight: (profile.weightKg - perMonth * m).toFixed(1), icon: m === profile.months ? "★" : "●" });
+  }
+
+  const handleStart = () => {
+    onStart({ ...profile, ...plan, goal, selectedPlan: chosen, startWeight: profile.weightKg, startDate: todayStr() });
+  };
+
+  return (
+    <div style={{ background: "#0a0a0c", minHeight: "100vh", fontFamily: "'DM Sans', system-ui, sans-serif", color: "#fff" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 20px 60px" }}>
+        {/* Hero */}
+        <div style={{ textAlign: "center", padding: "36px 0 24px" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 10 }}>Your personalised plan</div>
+          <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>Hi, {profile.name}! 👋</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.55)" }}>Lose {lossKg} kg in {profile.months} month{profile.months > 1 ? "s" : ""}</div>
+        </div>
+
+        {/* Big ring */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+          <Ring size={176} strokeW={14} pct={ringPct} color="#f97316" bg="rgba(255,255,255,0.05)">
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1 }}>{goal}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>kcal / day</div>
+          </Ring>
+        </div>
+
+        {/* Intensity picker */}
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "center", marginBottom: 12 }}>Choose your calorie target</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: plan.gentle === 1200 && plan.recommended === 1200 && plan.aggressive === 1200 ? 12 : 24 }}>
+          {[
+            ["gentle",      "Relaxed",      "Eat more,\nlose slowly"],
+            ["recommended", "Balanced ★",  "Recommended\npace"],
+            ["aggressive",  "Fast",         "Eat less,\nlose quicker"],
+          ].map(([key, lbl, sub]) => (
+            <button key={key} onClick={() => setChosen(key)} style={{
+              padding: "14px 6px", borderRadius: 14, border: "none", cursor: "pointer", textAlign: "center",
+              background: chosen === key ? "#f97316" : "rgba(255,255,255,0.05)",
+              outline: chosen === key ? "none" : "1px solid rgba(255,255,255,0.08)",
+              transition: "all 0.2s"
+            }}>
+              <div style={{ fontSize: 10, color: chosen === key ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.5)", marginBottom: 4, fontWeight: 700, letterSpacing: "0.04em" }}>{lbl}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0" }}>{plan[key]}</div>
+              <div style={{ fontSize: 9, color: chosen === key ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)", marginTop: 4, lineHeight: 1.4, whiteSpace: "pre-line" }}>{sub}</div>
+            </button>
+          ))}
+        </div>
+        {plan.gentle === 1200 && plan.recommended === 1200 && plan.aggressive === 1200 && (
+          <div style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 12, padding: "12px 14px", marginBottom: 24, fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6 }}>
+            ⚠ Your goal requires a very large deficit — all plans are set to <span style={{ color: "#f97316", fontWeight: 700 }}>1,200 kcal</span>, the safe daily minimum. Consider a longer timeline or a smaller target to get a more personalised plan.
+          </div>
+        )}
+
+        {/* Stats grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          {[
+            { label: "BMR",         val: plan.bmr,         unit: "kcal", note: "Calories at rest" },
+            { label: "TDEE",        val: plan.tdee,        unit: "kcal", note: "Total daily burn" },
+            { label: "Daily deficit",val: plan.dailyDeficit,unit: "kcal", note: "Below maintenance" },
+            { label: "BMI",         val: plan.bmi,         unit: "",     note: bmiLabel, noteColor: bmiColor },
+          ].map(s => (
+            <div key={s.label} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "16px 14px", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{s.label}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{s.val}<span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: 3 }}>{s.unit}</span></div>
+              <div style={{ fontSize: 11, color: s.noteColor || "rgba(255,255,255,0.35)", marginTop: 4 }}>{s.note}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Macros */}
+        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 16, padding: "18px 16px", marginBottom: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Daily macro targets</div>
+          {[["Protein", plan.protein, 30, "rgba(255,255,255,0.5)"], ["Carbs", plan.carbs, 40, "rgba(255,255,255,0.5)"], ["Fat", plan.fat, 30, "rgba(255,255,255,0.5)"]].map(([name, g, pct, color]) => (
+            <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", width: 52 }}>{name}</div>
+              <div style={{ flex: 1 }}><ProgressBar pct={pct} color={color} h={5} /></div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f0f0", width: 40, textAlign: "right" }}>{g}g</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", width: 30, textAlign: "right" }}>{pct}%</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Timeline */}
+        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 16, padding: "18px 16px", marginBottom: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Weight milestone plan</div>
+          {milestones.map((m, i) => (
+            <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: i < milestones.length - 1 ? 14 : 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: i === 0 ? "rgba(249,115,22,0.25)" : i === milestones.length - 1 ? "rgba(52,211,153,0.25)" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: i === 0 ? "#f97316" : i === milestones.length - 1 ? "#34d399" : "rgba(255,255,255,0.4)" }}>{m.icon}</div>
+                {i < milestones.length - 1 && <div style={{ width: 1.5, height: 18, background: "rgba(255,255,255,0.08)", marginTop: 4 }} />}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 2 }}>{m.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{i === 0 ? "Start journey" : i === milestones.length - 1 ? "Reach goal! 🎉" : `Month ${m.month} checkpoint`}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 1 }}>Target: {m.weight} kg</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <PrimaryBtn onClick={handleStart} style={{ padding: "17px 20px", fontSize: 16 }}>Start tracking →</PrimaryBtn>
+        <div style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 10 }}>Based on Mifflin-St Jeor · Adjust anytime in Profile</div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════
+function MainApp({ profile, log, setLog, activityData, setActivityData, onReset, onHardReset, updateProfile }) {
+  const [tab, setTab] = useState("today");
+  const [preview, setPreview] = useState(null);
+  const [b64, setB64] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [meal, setMeal] = useState("lunch");
+  const [editEntry, setEditEntry] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null); // null = today
+  const [currentDay, setCurrentDay] = useState(todayStr());
+  const [stepsInput, setStepsInput] = useState("");
+  const [showStepsModal, setShowStepsModal] = useState(false);
+  const [showExerciseModal, setShowExerciseModal] = useState(false);
+  const [exType, setExType] = useState(EXERCISES[0]);
+  const [exMins, setExMins] = useState("30");
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editProf, setEditProf] = useState(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [pastDayKey, setPastDayKey] = useState(null); // which past day is expanded for logging
+  const [pastMeal, setPastMeal] = useState("lunch");
+  const [pastFood, setPastFood] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+  const [pastStepsInput, setPastStepsInput] = useState("");
+  const [pastShowSteps, setPastShowSteps] = useState(false);
+  const [pastShowExercise, setPastShowExercise] = useState(false);
+  const [pastExType, setPastExType] = useState(EXERCISES[0]);
+  const [pastExMins, setPastExMins] = useState("30");
+  const [pastWaterMl, setPastWaterMl] = useState(0);
+  const [pastScanPreview, setPastScanPreview] = useState(null);
+  const [pastScanB64, setPastScanB64] = useState(null);
+  const [pastScanResult, setPastScanResult] = useState(null);
+  const [pastScanLoading, setPastScanLoading] = useState(false);
+  const [pastScanError, setPastScanError] = useState("");
+  const [weighIns, setWeighIns] = useState([]);
+  const [showWeighIn, setShowWeighIn] = useState(false);
+  const [weighInInput, setWeighInInput] = useState("");
+  const [selectedChartDate, setSelectedChartDate] = useState(null);
+  const [chartWeighInput, setChartWeighInput] = useState("");
+  const [xpData, setXpData] = useState({ xp: 0, history: [] });
+  const [challengeData, setChallengeData] = useState({});
+  const [xpPopup, setXpPopup] = useState(null); // { amount, label }
+  const fileRef = useRef();
+  const avatarFileRef = useRef();
+  const pastFileRef = useRef();
+
+  // Load XP + challenge data
+  useEffect(() => {
+    loadXPData().then(setXpData);
+    loadChallengeData().then(setChallengeData);
+  }, []);
+
+  // Award XP helper
+  const awardXP = async (amount, label) => {
+    const fresh = await loadXPData();
+    const updated = { xp: fresh.xp + amount, history: [{ date: todayStr(), amount, label }, ...fresh.history].slice(0, 50) };
+    setXpData(updated);
+    await saveXPData(updated);
+    setXpPopup({ amount, label });
+    setTimeout(() => setXpPopup(null), 2000);
+  };
+
+  // Check & complete challenges whenever log/activity changes
+  const checkAndCompleteChallenges = async (newLog, newActivity) => {
+    const today = todayStr();
+    const challenges = getDailyChallenges(today);
+    const saved = await loadChallengeData();
+    const todayCompleted = saved[today] || [];
+    let newXP = 0;
+    const newlyDone = [];
+    for (const c of challenges) {
+      if (todayCompleted.includes(c.id)) continue;
+      if (checkChallenge(c.id, { log: newLog, activityData: newActivity, profile, today })) {
+        newlyDone.push(c.id);
+        newXP += c.xp;
+      }
+    }
+    if (newlyDone.length > 0) {
+      const updatedCompleted = { ...saved, [today]: [...todayCompleted, ...newlyDone] };
+      setChallengeData(updatedCompleted);
+      await saveChallengeData(updatedCompleted);
+      await awardXP(newXP, newlyDone.length === 1 ? "Challenge complete!" : `${newlyDone.length} challenges done!`);
+    }
+  };
+
+  // Re-sync date if app left open across midnight
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newDay = todayStr();
+      if (newDay !== currentDay) setCurrentDay(newDay);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [currentDay]);
+
+  // Load weigh-ins
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = localStorage.getItem("nutriai_weighins");
+        setWeighIns(r ? JSON.parse(r) : []);
+      } catch(_) { setWeighIns([]); }
+    })();
+  }, []);
+
+  const saveWeighIns = (updated) => {
+    setWeighIns(updated);
+    try { localStorage.setItem("nutriai_weighins", JSON.stringify(updated)); } catch(_) {}
+  };
+
+  const logWeighIn = () => {
+    const kg = parseFloat(weighInInput);
+    if (!kg || kg < 20 || kg > 400) return;
+    const entry = { date: todayStr(), kg };
+    // Replace today's entry if already exists, otherwise prepend
+    const filtered = weighIns.filter(w => w.date !== todayStr());
+    const updated = [entry, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
+    saveWeighIns(updated);
+    // Update profile current weight + recalc BMI
+    const newBmi = Math.round((kg / Math.pow(profile.heightCm / 100, 2)) * 10) / 10;
+    updateProfile({ ...profile, weightKg: kg, bmi: newBmi });
+    setWeighInInput("");
+    setShowWeighIn(false);
+  };
+
+  // Persist activity keyed by date
+  const saveActivity = (newAct) => {
+    const updated = { ...activityData, [today]: newAct };
+    setActivityData(updated);
+    try { localStorage.setItem("nutriai_activity", JSON.stringify(updated)); } catch(_) {}
+    checkAndCompleteChallenges(log, updated);
+  };
+
+  const addGlass = () => saveActivity({ ...todayActivity, waterMl: Math.min(WATER_GOAL_ML * 2, todayActivity.waterMl + GLASS_ML) });
+  const removeGlass = () => saveActivity({ ...todayActivity, waterMl: Math.max(0, todayActivity.waterMl - GLASS_ML) });
+
+  // Past-day helpers
+  const saveActivityForDay = (dayKey, newAct) => {
+    const updated = { ...activityData, [dayKey]: newAct };
+    setActivityData(updated);
+    try { localStorage.setItem("nutriai_activity", JSON.stringify(updated)); } catch(_) {}
+  };
+  const openPastDay = (dayKey) => {
+    if (pastDayKey === dayKey) { setPastDayKey(null); return; }
+    setPastDayKey(dayKey);
+    setPastFood({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+    setPastMeal("lunch");
+    setPastShowSteps(false);
+    setPastShowExercise(false);
+    const act = activityData[dayKey] || { steps: 0, waterMl: 0, exercises: [] };
+    setPastStepsInput(String(act.steps || 0));
+    setPastWaterMl(act.waterMl || 0);
+    setPastExType(EXERCISES[0]);
+    setPastExMins("30");
+    setPastScanPreview(null);
+    setPastScanB64(null);
+    setPastScanResult(null);
+    setPastScanError("");
+  };
+
+  const handlePastFile = (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { setPastScanPreview(ev.target.result); setPastScanB64(ev.target.result.split(",")[1]); setPastScanResult(null); setPastScanError(""); };
+    r.readAsDataURL(f);
+  };
+
+  const analysePast = async () => {
+    if (!pastScanB64) return;
+    setPastScanLoading(true); setPastScanError("");
+    try {
+      const mm = pastScanPreview.match(/^data:(image\/\w+);base64,/);
+      const mt = (mm && mm[1]) || "image/jpeg";
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 800,
+          messages: [{ role: "user", content: [
+            { type: "image", source: { type: "base64", media_type: mt, data: pastScanB64 } },
+            { type: "text", text: `Analyse this food. Reply ONLY with JSON, no markdown:\n{"name":"specific food","calories":450,"protein_g":35,"carbs_g":45,"fat_g":8,"serving":"~400g","notes":"Brief nutrition note."}\nIf no food: {"error":"No food detected."}` }
+          ]}]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "";
+      let parsed;
+      try { parsed = JSON.parse(text.trim()); } catch { const m = text.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Parse error"); }
+      if (parsed.error) setPastScanError(parsed.error);
+      else setPastScanResult(parsed);
+    } catch (err) { setPastScanError("Could not analyse. " + err.message); }
+    finally { setPastScanLoading(false); }
+  };
+  const addPastFoodEntry = (dayKey) => {
+    const cal = parseInt(pastFood.calories) || 0;
+    if (!pastFood.name.trim() || !cal) return;
+    const entry = { id: Date.now(), name: pastFood.name, calories: cal, protein: parseInt(pastFood.protein)||0, carbs: parseInt(pastFood.carbs)||0, fat: parseInt(pastFood.fat)||0, meal: pastMeal };
+    const updated = { ...log, [dayKey]: [...(log[dayKey] || []), entry] };
+    setLog(updated);
+    setPastFood({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+  };
+  const removePastEntry = (dayKey, id) => setLog({ ...log, [dayKey]: (log[dayKey] || []).filter(e => e.id !== id) });
+
+  const today = currentDay;  // stays in sync with date changes via useEffect
+  const todayActivity = activityData[today] || { steps: 0, waterMl: 0, exercises: [] };
+  const todayLog = log[today] || [];
+  const totalCal = todayLog.reduce((s, e) => s + e.calories, 0);
+  const totalP   = todayLog.reduce((s, e) => s + e.protein, 0);
+  const totalC   = todayLog.reduce((s, e) => s + e.carbs, 0);
+  const totalF   = todayLog.reduce((s, e) => s + e.fat, 0);
+  const stepsBurned = stepCalsBurned(todayActivity.steps);
+  const exBurned = (todayActivity.exercises || []).reduce((s, e) => s + e.burned, 0);
+  const totalBurned = stepsBurned + exBurned;
+  const adjustedGoal = profile.goal + totalBurned;
+  const ringPct  = Math.round(totalCal / adjustedGoal * 100);
+  const remaining = adjustedGoal - totalCal;
+
+  // streak
+  let streak = 0;
+  const tmp = new Date();
+  for (let i = 0; i < 365; i++) {
+    const k = `${tmp.getFullYear()}-${String(tmp.getMonth()+1).padStart(2,"0")}-${String(tmp.getDate()).padStart(2,"0")}`;
+    if ((log[k] || []).length > 0) { streak++; tmp.setDate(tmp.getDate() - 1); } else break;
+  }
+  const onGoalDays = Object.keys(log).filter(k => { const dc = (log[k] || []).reduce((s, e) => s + e.calories, 0); return dc > 0 && dc <= profile.goal; }).length;
+
+  const deadline = new Date(profile.deadline);
+  const daysLeft = Math.max(0, Math.ceil((deadline - new Date()) / 86400000));
+  const startW = profile.startWeight || profile.weightKg;
+  const totalLoss = startW - profile.targetKg;
+  const gainedWeight = profile.weightKg > startW;
+  const progressPct = totalLoss > 0 ? Math.max(0, Math.min(100, ((startW - profile.weightKg) / totalLoss) * 100)) : 0;
+  const dotLeft = Math.max(2, Math.min(98, progressPct)); // always visible, never clips off edge
+
+  const weekBars = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    return { label: d.toLocaleDateString("en-GB", { weekday: "short" }), cal: (log[k] || []).reduce((s, e) => s + e.calories, 0), isToday: k === today, dateKey: k };
+  });
+  const maxBar = Math.max(...weekBars.map(b => b.cal), profile.goal, 1);
+
+  const bmiLabel = profile.bmi < 18.5 ? "Underweight" : profile.bmi < 25 ? "Normal" : profile.bmi < 30 ? "Overweight" : "Obese";
+  const bmiColor = profile.bmi < 18.5 ? "rgba(255,255,255,0.5)" : profile.bmi < 25 ? "#34d399" : profile.bmi < 30 ? "#f97316" : "#f87171";
+  const bmiPct   = Math.min(100, Math.max(0, (profile.bmi - 15) / 25 * 100));
+
+  const handleFile = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { setPreview(ev.target.result); setB64(ev.target.result.split(",")[1]); setScanResult(null); setError(""); };
+    r.readAsDataURL(f);
+  };
+
+  const analyse = async () => {
+    if (!b64) return;
+    setLoading(true); setError("");
+    try {
+      const mm = preview.match(/^data:(image\/\w+);base64,/);
+      const mt = (mm && mm[1]) || "image/jpeg";
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 800,
+          messages: [{ role: "user", content: [
+            { type: "image", source: { type: "base64", media_type: mt, data: b64 } },
+            { type: "text", text: `Analyse this food. Reply ONLY with JSON, no markdown:\n{"name":"specific food","calories":450,"protein_g":35,"carbs_g":45,"fat_g":8,"serving":"~400g","notes":"Brief nutrition note."}\nIf no food: {"error":"No food detected."}` }
+          ]}]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.[0]?.text || "";
+      let parsed;
+      try { parsed = JSON.parse(text.trim()); } catch { const m = text.match(/\{[\s\S]*\}/); if (m) parsed = JSON.parse(m[0]); else throw new Error("Parse error"); }
+      if (parsed.error) setError(parsed.error);
+      else setScanResult(parsed);
+    } catch (err) { setError("Could not analyse. " + err.message); }
+    finally { setLoading(false); }
+  };
+
+  const addLog = () => {
+    if (!scanResult) return;
+    const entry = { id: Date.now(), name: scanResult.name, calories: scanResult.calories, protein: scanResult.protein_g, carbs: scanResult.carbs_g, fat: scanResult.fat_g, meal };
+    const updated = { ...log, [today]: [...(log[today] || []), entry] };
+    setLog(updated);
+    checkAndCompleteChallenges(updated, activityData);
+    setPreview(null); setB64(null); setScanResult(null); setError("");
+  };
+
+  const removeEntry = id => setLog({ ...log, [today]: (log[today] || []).filter(e => e.id !== id) });
+
+  const updateEntry = (id, changes) => {
+    const updated = { ...log, [today]: (log[today] || []).map(e => e.id === id ? { ...e, ...changes } : e) };
+    setLog(updated);
+    checkAndCompleteChallenges(updated, activityData);
+    setEditEntry(null);
+  };
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+
+
+  return (
+    <div style={{ background: "#0f0f11", minHeight: "100vh", color: "#f0f0f0", fontFamily: "system-ui, sans-serif" }}>
+      <style>{`@keyframes fadeSlideIn { from { opacity:0; transform:translateX(-50%) translateY(-10px);} to { opacity:1; transform:translateX(-50%) translateY(0);} }`}</style>
+      <div style={{ position: "sticky", top: 0, zIndex: 99, background: "rgba(15,15,17,0.96)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex" }}>
+        {[
+          { id: "today",      label: "Today",      icon: "food"     },
+          { id: "challenges", label: "Challenges", icon: "flame"    },
+          { id: "progress",   label: "Progress",   icon: "trending" },
+          { id: "profile",    label: "Profile",    icon: "user"     },
+        ].map(t => (
+          <button key={t.id} style={{ flex: 1, padding: "11px 2px", border: "none", background: "none", cursor: "pointer", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", color: tab === t.id ? "#f97316" : "rgba(255,255,255,0.35)", borderBottom: tab === t.id ? "2px solid #f97316" : "2px solid transparent", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }} onClick={() => setTab(t.id)}>
+            <Icon name={t.icon} size={18} color={tab === t.id ? "#f97316" : "rgba(255,255,255,0.35)"} strokeWidth={tab === t.id ? 2.2 : 1.6} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* XP Popup */}
+      {xpPopup && (
+        <div style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", zIndex: 999, background: "linear-gradient(135deg,#f97316,#ea580c)", borderRadius: 99, padding: "10px 20px", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 24px rgba(249,115,22,0.5)", animation: "fadeSlideIn 0.3s ease" }}>
+          <span style={{ fontSize: 18 }}>⭐</span>
+          <span style={{ fontWeight: 800, fontSize: 15, color: "#fff" }}>+{xpPopup.amount} XP</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>{xpPopup.label}</span>
+        </div>
+      )}
+
+      {/* ─── TODAY ─── */}
+      {tab === "today" && (
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "18px 20px 80px" }}>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{greeting}, {profile.name}! 👋</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>
+              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+            </div>
+          </div>
+
+          {/* Calorie card */}
+          <div style={{ background: "#18181b", borderRadius: 20, padding: "20px 18px", marginBottom: 14, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 18 }}>
+              <Ring size={96} strokeW={9} pct={ringPct} color={ringPct > 100 ? "#f87171" : "#f97316"} bg="rgba(255,255,255,0.05)">
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f0f0" }}>{Math.min(ringPct, 999)}<span style={{ fontSize: 11 }}>%</span></div>
+              </Ring>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Eaten today</div>
+                <div style={{ fontSize: 42, fontWeight: 800, color: "#fff", letterSpacing: "-2px", lineHeight: 1 }}>{totalCal}</div>
+
+                {/* Goal row - orange */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 7 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>Goal</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#f97316" }}>{adjustedGoal} kcal</span>
+                  {totalBurned > 0 && (
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", padding: "1px 6px", borderRadius: 99 }}>+{totalBurned} exercise</span>
+                  )}
+                </div>
+
+                {/* Remaining row - green or red */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: remaining >= 0 ? "#34d399" : "#f87171", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{remaining >= 0 ? "Remaining" : "Over by"}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: remaining >= 0 ? "#34d399" : "#f87171" }}>{Math.abs(remaining)} kcal</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              {[["Protein", totalP, profile.protein, true], ["Carbs", totalC, profile.carbs, false], ["Fat", totalF, profile.fat, false]].map(([name, val, target, isProtein]) => {
+                const over = val > target;
+                const met  = val >= target;
+                const under = isProtein && !met && val > 0;
+                const color = over ? "#f87171" : met && isProtein ? "#34d399" : under ? "#f97316" : "rgba(255,255,255,0.35)";
+                const bg    = over ? "rgba(248,113,113,0.08)" : met && isProtein ? "rgba(52,211,153,0.08)" : under ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.05)";
+                const border= over ? "1px solid rgba(248,113,113,0.2)" : met && isProtein ? "1px solid rgba(52,211,153,0.2)" : under ? "1px solid rgba(249,115,22,0.2)" : "1px solid transparent";
+                const barPct = Math.min(100, Math.round(val / target * 100));
+                const hint  = over ? `+${val - target}g over` : met && isProtein ? "✓ target met" : `/ ${target}g`;
+                return (
+                  <div key={name} style={{ background: bg, borderRadius: 12, padding: "10px", border }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: over || under || (met && isProtein) ? color : "#fff" }}>{val}g</div>
+                    <div style={{ fontSize: 10, color, marginTop: 2, textTransform: "uppercase", letterSpacing: "0.04em" }}>{name}</div>
+                    <div style={{ fontSize: 10, color: over || under || (met && isProtein) ? color : "rgba(255,255,255,0.2)", marginTop: 2 }}>{hint}</div>
+                    <div style={{ marginTop: 5 }}>
+                      <ProgressBar pct={barPct} color={color} h={3} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Scanner */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: preview ? "1px solid rgba(255,255,255,0.08)" : "1.5px dashed rgba(255,255,255,0.08)" }}>
+            {!preview ? (
+              <div style={{ textAlign: "center", padding: "10px 0", cursor: "pointer" }} onClick={() => fileRef.current.click()}>
+                <input type="file" ref={fileRef} accept="image/*" style={{ display: "none" }} onChange={handleFile} />
+                <div style={{ marginBottom: 10 }}><Icon name="camera" size={38} color="rgba(255,255,255,0.4)"/></div>
+                <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 5 }}>Scan your food</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 16 }}>AI identifies calories & macros instantly</div>
+                <button style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "11px 24px", borderRadius: 99, fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 16px rgba(249,115,22,0.35)" }}
+                  onClick={e => { e.stopPropagation(); fileRef.current.click(); }}><Icon name="camera" size={14} color="#fff"/> Choose photo</button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ position: "relative", marginBottom: 12 }}>
+                  <img src={preview} alt="" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover", display: "block" }} />
+                  <button
+                    onClick={() => { setPreview(null); setB64(null); setScanResult(null); setError(""); if(fileRef.current) fileRef.current.value = ""; }}
+                    style={{ position: "absolute", top: 8, right: 8, width: 30, height: 30, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "1.5px solid rgba(255,255,255,0.08)", color: "#fff", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}
+                  >✕</button>
+                </div>
+                {loading ? (
+                  <div>
+                    <div style={{ height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden", marginBottom: 10 }}>
+                      <div style={{ height: "100%", background: "#f97316", width: "70%", borderRadius: 99 }} />
+                    </div>
+                    <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Analysing your food…</div>
+                  </div>
+                ) : !scanResult ? (
+                  <button style={{ width: "100%", background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "12px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer" }} onClick={analyse}><Icon name="scan" size={14} color="#fff"/> Analyse</button>
+                ) : null}
+              </div>
+            )}
+            {error && <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", color: "#f87171", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginTop: 10 }}>⚠ {error}</div>}
+          </div>
+
+          {/* Scan result */}
+          {scanResult && (
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <Icon name="food" size={22} color="#f97316"/>
+                <div style={{ flex: 1, fontWeight: 700, fontSize: 16 }}>{scanResult.name}</div>
+                <div style={{ background: "#f97316", color: "#fff", padding: "4px 12px", borderRadius: 99, fontSize: 13, fontWeight: 700 }}>{scanResult.calories} kcal</div>
+                <button onClick={() => { setScanResult(null); setPreview(null); setB64(null); setError(""); if(fileRef.current) fileRef.current.value = ""; }} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 700 }} title="Discard">✕</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                {[["Protein", scanResult.protein_g, "rgba(255,255,255,0.6)"], ["Carbs", scanResult.carbs_g, "rgba(255,255,255,0.6)"], ["Fat", scanResult.fat_g, "rgba(255,255,255,0.6)"]].map(([n, v, c]) => (
+                  <div key={n} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: c }}>{v}g</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>{n}</div>
+                  </div>
+                ))}
+              </div>
+              {scanResult.notes && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 12, lineHeight: 1.6 }}>{scanResult.notes}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <select value={meal} onChange={e => setMeal(e.target.value)} style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit" }}>
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="dinner">Dinner</option>
+                  <option value="snack">Snack</option>
+                </select>
+                <button style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }} onClick={addLog}>+ Log it</button>
+              </div>
+            </div>
+          )}
+
+          {/* Weight journey */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+
+            {/* Row 1: title + meta + log button */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Weight journey</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                  {deadline.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · {daysLeft} days left
+                </div>
+                {gainedWeight && (
+                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4 }}>
+                    ↑ {(profile.weightKg - startW).toFixed(1)} kg — let's get back on track
+                  </div>
+                )}
+              </div>
+              <button onClick={() => { setShowWeighIn(v => !v); setWeighInInput(String(profile.weightKg)); }}
+                style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", borderRadius: 8, padding: "5px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+                {showWeighIn ? "Close" : "Log weight"}
+              </button>
+            </div>
+
+            {/* Row 2: progress bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>{startW} kg</div>
+              <div style={{ flex: 1, position: "relative" }}>
+                <ProgressBar pct={progressPct} color={gainedWeight ? "#f87171" : "#f97316"} h={6} />
+                <div style={{ position: "absolute", top: "50%", left: `${dotLeft}%`, transform: "translate(-50%,-50%)", width: 12, height: 12, borderRadius: "50%", background: gainedWeight ? "#f87171" : "#f97316", border: "2px solid #0f0f11" }} />
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#34d399", whiteSpace: "nowrap" }}>{profile.targetKg} kg</div>
+            </div>
+
+            {/* Inline weigh-in input */}
+            {showWeighIn && (
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 14 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input type="number" min="20" max="400" step="0.1" placeholder={profile.weightKg} value={weighInInput}
+                    onChange={e => setWeighInInput(e.target.value)}
+                    style={{ flex: 1, padding: "10px 13px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 16, fontWeight: 700, fontFamily: "inherit", outline: "none" }} />
+                  <button onClick={logWeighIn}
+                    style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "10px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Save</button>
+                </div>
+                {weighInInput && parseFloat(weighInInput) > 0 && (
+                  <div style={{ fontSize: 11, marginTop: 7 }}>
+                    {parseFloat(weighInInput) < profile.weightKg
+                      ? <span style={{ color: "#34d399" }}>↓ {(profile.weightKg - parseFloat(weighInInput)).toFixed(1)} kg lost 🎉</span>
+                      : parseFloat(weighInInput) > profile.weightKg
+                      ? <span style={{ color: "#f87171" }}>↑ {(parseFloat(weighInInput) - profile.weightKg).toFixed(1)} kg gained</span>
+                      : <span style={{ color: "rgba(255,255,255,0.35)" }}>No change</span>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Activity card — Steps + Exercise */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>Activity</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", padding: "3px 10px", borderRadius: 99 }}>Apple Health soon</div>
+            </div>
+
+            {totalBurned > 0 && (
+              <div style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: 11, padding: "10px 14px", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Total burned today</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#34d399" }}>+{totalBurned} kcal</div>
+              </div>
+            )}
+
+            {/* Steps */}
+            <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="steps" size={20} color="#34d399"/>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>Steps</div>
+                    <div style={{ fontSize: 11, color: "#34d399" }}>+{stepsBurned} kcal earned</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399" }}>{todayActivity.steps.toLocaleString()}</div>
+                  <button onClick={() => { setStepsInput(String(todayActivity.steps)); setShowStepsModal(!showStepsModal); setShowExerciseModal(false); }}
+                    style={{ background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.3)", color: "#34d399", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Edit</button>
+                </div>
+              </div>
+              <ProgressBar pct={Math.round(todayActivity.steps / 10000 * 100)} color="#34d399" h={5} />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>
+                <span>0</span><span>10,000 step goal</span>
+              </div>
+              {showStepsModal && (
+                <div style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)", borderRadius: 11, padding: "12px", marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 7 }}>Enter today's steps</div>
+                  <div style={{ display: "flex", gap: 7 }}>
+                    <input type="number" value={stepsInput} min="0" max="100000" placeholder="e.g. 7500"
+                      onChange={e => setStepsInput(e.target.value)}
+                      style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 14, fontFamily: "inherit" }} />
+                    <button onClick={() => { saveActivity({ ...todayActivity, steps: Math.max(0, parseInt(stepsInput) || 0) }); setShowStepsModal(false); }}
+                      style={{ background: "#34d399", color: "#0f0f11", border: "none", padding: "9px 14px", borderRadius: 9, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>Save</button>
+                    <button onClick={() => setShowStepsModal(false)}
+                      style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "none", padding: "9px 10px", borderRadius: 9, cursor: "pointer" }}>✕</button>
+                  </div>
+                  {stepsInput && <div style={{ fontSize: 11, color: "rgba(52,211,153,0.6)", marginTop: 7 }}>
+                    +{stepCalsBurned(parseInt(stepsInput) || 0)} kcal · New goal: {profile.goal + stepCalsBurned(parseInt(stepsInput) || 0) + exBurned} kcal
+                  </div>}
+                </div>
+              )}
+            </div>
+
+            {/* Exercise */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Icon name="run" size={20} color="#f97316"/>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>Exercise</div>
+                    <div style={{ fontSize: 11, color: "#f97316" }}>+{exBurned} kcal earned</div>
+                  </div>
+                </div>
+                <button onClick={() => { setShowExerciseModal(!showExerciseModal); setShowStepsModal(false); }}
+                  style={{ background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.3)", color: "#f97316", borderRadius: 8, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                  + Add
+                </button>
+              </div>
+
+              {showExerciseModal && (
+                <div style={{ background: "rgba(249,115,22,0.05)", border: "1px solid rgba(249,115,22,0.15)", borderRadius: 11, padding: "13px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 9 }}>Select exercise</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                    {EXERCISES.map(ex => (
+                      <button key={ex.label} onClick={() => setExType(ex)} style={{
+                        padding: "6px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12,
+                        background: exType.label === ex.label ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.05)",
+                        color: exType.label === ex.label ? "#f97316" : "rgba(255,255,255,0.55)",
+                        outline: exType.label === ex.label ? "1.5px solid #f97316" : "none"
+                      }}>{ex.icon} {ex.label}</button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 7 }}>Duration (minutes)</div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                    {["15","30","45","60","90"].map(m => (
+                      <button key={m} onClick={() => setExMins(m)} style={{
+                        flex: 1, padding: "8px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                        background: exMins === m ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.05)",
+                        color: exMins === m ? "#f97316" : "rgba(255,255,255,0.55)",
+                        outline: exMins === m ? "1.5px solid #f97316" : "none"
+                      }}>{m}m</button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 10 }}>
+                    {exType.icon} {exType.label} · {exMins} min = <span style={{ color: "#f97316", fontWeight: 700 }}>+{exerciseCalsBurned(exType.met, parseInt(exMins) || 0, profile.weightKg)} kcal</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 7 }}>
+                    <button onClick={() => {
+                      const burned = exerciseCalsBurned(exType.met, parseInt(exMins) || 0, profile.weightKg);
+                      const newEx = { id: Date.now(), label: exType.label, icon: exType.icon, mins: parseInt(exMins), burned };
+                      saveActivity({ ...todayActivity, exercises: [...(todayActivity.exercises || []), newEx] });
+                      setShowExerciseModal(false);
+                    }} style={{ flex: 1, background: "#f97316", color: "#fff", border: "none", padding: "10px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                      Log exercise
+                    </button>
+                    <button onClick={() => setShowExerciseModal(false)}
+                      style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "none", padding: "10px 13px", borderRadius: 9, cursor: "pointer" }}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {(todayActivity.exercises || []).length === 0 ? (
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", textAlign: "center", padding: "8px 0" }}>No exercise logged yet</div>
+              ) : (
+                (todayActivity.exercises || []).map(ex => (
+                  <div key={ex.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ fontSize: 18 }}>{ex.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{ex.label}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{ex.mins} min</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#f97316" }}>+{ex.burned} kcal</div>
+                    <button onClick={() => saveActivity({ ...todayActivity, exercises: (todayActivity.exercises || []).filter(e => e.id !== ex.id) })}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 15 }}>✕</button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Water card — separate, hydration only */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon name="water" size={20} color="rgba(255,255,255,0.6)"/>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>Water intake</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{todayActivity.waterMl} ml of {WATER_GOAL_ML} ml goal</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button onClick={removeGlass} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", minWidth: 28, textAlign: "center" }}>{Math.round(todayActivity.waterMl / GLASS_ML)}</div>
+                <button onClick={addGlass} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.3)", color: "rgba(255,255,255,0.7)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+              {Array.from({ length: Math.round(WATER_GOAL_ML / GLASS_ML) }).map((_, i) => {
+                const filled = i < Math.round(todayActivity.waterMl / GLASS_ML);
+                return (
+                  <button key={i} onClick={() => saveActivity({ ...todayActivity, waterMl: (i + 1) * GLASS_ML })}
+                    style={{ width: 30, height: 34, borderRadius: 6, border: "1.5px solid " + (filled ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.08)"), background: filled ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>
+                    {filled ? <Icon name="water" size={12} color="rgba(255,255,255,0.7)"/> : <span style={{color:"rgba(255,255,255,0.15)",fontSize:10}}>○</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <ProgressBar pct={Math.round(todayActivity.waterMl / WATER_GOAL_ML * 100)} color="rgba(255,255,255,0.35)" h={4} />
+          </div>
+
+          {/* Food log */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Today's log</div>
+            {todayLog.length > 0 && <button style={{ background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer" }} onClick={() => setLog({ ...log, [today]: [] })}>Clear all</button>}
+          </div>
+          {todayLog.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px", color: "rgba(255,255,255,0.2)", fontSize: 13, background: "rgba(255,255,255,0.05)", border: "1.5px dashed rgba(255,255,255,0.08)", borderRadius: 14 }}>
+              Nothing logged yet — scan your first meal!
+            </div>
+          ) : (
+            [...todayLog].reverse().map(e => (
+              <div key={e.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, padding: 0, overflow: "hidden" }}>
+                {/* Normal row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: MEAL_COLORS[e.meal] || "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{e.name}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                      <span style={{ background: "rgba(255,255,255,0.08)", padding: "1px 7px", borderRadius: 6, marginRight: 6, textTransform: "capitalize" }}>{e.meal}</span>
+                      P:{e.protein}g · C:{e.carbs}g · F:{e.fat}g
+                    </div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: "#f97316" }}>{e.calories}</div>
+                  {/* Edit button */}
+                  <button
+                    onClick={() => setEditEntry(editEntry?.id === e.id ? null : { ...e })}
+                    style={{ background: editEntry?.id === e.id ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.05)", border: "1px solid " + (editEntry?.id === e.id ? "rgba(249,115,22,0.4)" : "rgba(255,255,255,0.08)"), color: editEntry?.id === e.id ? "#f97316" : "rgba(255,255,255,0.55)", borderRadius: 8, padding: "4px 9px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                  >✏</button>
+                  <button style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 16, padding: "0 2px" }} onClick={() => removeEntry(e.id)}>✕</button>
+                </div>
+                {/* Inline edit panel */}
+                {editEntry?.id === e.id && (
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px", background: "rgba(249,115,22,0.04)" }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Edit entry</div>
+                    {/* Name */}
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 5 }}>Food name</div>
+                      <input value={editEntry.name} onChange={ev => setEditEntry(p => ({ ...p, name: ev.target.value }))}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+                    </div>
+                    {/* Meal type */}
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 7 }}>Meal</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {["breakfast","lunch","dinner","snack"].map(m => (
+                          <button key={m} onClick={() => setEditEntry(p => ({ ...p, meal: m }))} style={{
+                            flex: 1, padding: "8px 4px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, textTransform: "capitalize",
+                            background: editEntry.meal === m ? MEAL_COLORS[m] : "rgba(255,255,255,0.08)",
+                            color: editEntry.meal === m ? "#fff" : "rgba(255,255,255,0.55)",
+                            outline: editEntry.meal === m ? "2px solid " + MEAL_COLORS[m] : "none",
+                          }}>{m}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Calories */}
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 5 }}>Calories (kcal)</div>
+                      <input type="number" value={editEntry.calories} onChange={ev => setEditEntry(p => ({ ...p, calories: parseInt(ev.target.value) || 0 }))}
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+                    </div>
+                    {/* Save / Cancel */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => updateEntry(e.id, editEntry)} style={{ flex: 1, background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "10px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Save changes</button>
+                      <button onClick={() => setEditEntry(null)} style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "none", padding: "10px 14px", borderRadius: 10, fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ─── PROGRESS ─── */}
+      {tab === "challenges" && (() => {
+        const todayKey = todayStr();
+        const challenges = getDailyChallenges(todayKey);
+        const completedToday = (challengeData[todayKey] || []);
+        const level = getLevel(xpData.xp);
+        const nextLevel = level.next;
+        const xpIntoLevel = xpData.xp - level.min;
+        const xpToNext = nextLevel ? nextLevel.min - level.min : 1;
+        const levelPct = nextLevel ? Math.min(100, Math.round(xpIntoLevel / xpToNext * 100)) : 100;
+
+        return (
+          <div style={{ maxWidth: 460, margin: "0 auto", padding: "18px 20px 80px" }}>
+
+            {/* Level card */}
+            <div style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.08))", borderRadius: 20, padding: "20px 18px", marginBottom: 14, border: "1px solid rgba(249,115,22,0.2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                <div style={{ fontSize: 40 }}>{level.emoji}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Your level</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: level.color, letterSpacing: "-0.5px" }}>{level.name}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: "#f97316" }}>{xpData.xp}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Total XP</div>
+                </div>
+              </div>
+              {nextLevel && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 6 }}>
+                    <span>{level.name}</span><span>{nextLevel.name} at {nextLevel.min} XP</span>
+                  </div>
+                  <ProgressBar pct={levelPct} color={level.color} h={8} />
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>{xpToNext - xpIntoLevel} XP to next level</div>
+                </>
+              )}
+              {!nextLevel && <div style={{ fontSize: 13, color: "#f97316", fontWeight: 700, marginTop: 4 }}>👑 Max level reached!</div>}
+            </div>
+
+            {/* Streak card - fixed */}
+            <div style={{ background: streak > 0 ? "linear-gradient(135deg,rgba(249,115,22,0.15),rgba(234,88,12,0.05))" : "rgba(255,255,255,0.04)", borderRadius: 20, padding: "16px 18px", marginBottom: 14, border: streak > 0 ? "1px solid rgba(249,115,22,0.25)" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ fontSize: 36 }}>{streak > 0 ? "🔥" : "💤"}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: streak > 0 ? "#f97316" : "rgba(255,255,255,0.3)", letterSpacing: "-1px" }}>{streak} day{streak !== 1 ? "s" : ""}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                  {streak === 0 ? "Log today to start your streak!" : streak < 3 ? "Great start — keep it up!" : streak < 7 ? "You're on a roll! 💪" : streak < 14 ? "One week strong! 🏆" : "Incredible consistency! 👑"}
+                </div>
+              </div>
+              {streak > 0 && (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Best</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>{streak}🔥</div>
+                </div>
+              )}
+            </div>
+
+            {/* Daily challenges */}
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12, letterSpacing: "-0.3px" }}>
+              ⚡ Today's Challenges
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)", marginLeft: 8 }}>Resets at midnight</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+              {challenges.map(c => {
+                const done = completedToday.includes(c.id);
+                return (
+                  <div key={c.id} style={{ background: done ? "rgba(52,211,153,0.08)" : "rgba(255,255,255,0.04)", borderRadius: 16, padding: "16px", border: done ? "1px solid rgba(52,211,153,0.25)" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 14, transition: "all 0.3s ease" }}>
+                    <div style={{ fontSize: 28, opacity: done ? 1 : 0.6 }}>{c.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: done ? "#34d399" : "#fff", display: "flex", alignItems: "center", gap: 6 }}>
+                        {c.label}
+                        {done && <span style={{ fontSize: 12 }}>✓</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>{c.desc}</div>
+                    </div>
+                    <div style={{ textAlign: "center", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: done ? "#34d399" : "#f97316" }}>+{c.xp}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>XP</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* XP History */}
+            {xpData.history.length > 0 && (
+              <>
+                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10, color: "rgba(255,255,255,0.6)" }}>Recent XP</div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  {xpData.history.slice(0, 8).map((h, i, arr) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", padding: "12px 16px", borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none", gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>⭐</span>
+                      <div style={{ flex: 1, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{h.label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#f97316" }}>+{h.amount}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {tab === "progress" && (
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "18px 20px 80px" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Your progress</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginBottom: 18 }}>
+            {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          </div>
+
+          {/* BMI gauge */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>BMI analysis</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <div>
+                <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-1px" }}>{profile.bmi}</div>
+                <div style={{ fontSize: 13, color: bmiColor, fontWeight: 700, marginTop: 3 }}>{bmiLabel}</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ height: 10, borderRadius: 99, background: "linear-gradient(90deg,rgba(255,255,255,0.2) 0%,#34d399 25%,#f97316 60%,#f87171 100%)", marginBottom: 8, position: "relative" }}>
+                  <div style={{ position: "absolute", top: "50%", left: `${bmiPct}%`, transform: "translate(-50%,-50%)", width: 16, height: 16, borderRadius: "50%", background: "#fff", border: `3px solid ${bmiColor}`, boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+                  <span>Under</span><span>Normal</span><span>Over</span><span>Obese</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+            {[
+              { icon: "flame", val: streak,   label: "Day streak" },
+              { icon: "scale", val: `${(profile.weightKg - profile.targetKg).toFixed(1)} kg`, label: "To goal" },
+              { icon: "target", val: onGoalDays, label: "Days on goal" },
+              { icon: "calendar", val: daysLeft,  label: "Days left" },
+            ].map(s => (
+              <div key={s.label} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+                <div style={{ marginBottom: 8 }}><Icon name={s.icon} size={22} color="rgba(255,255,255,0.5)"/></div>
+                <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px" }}>{s.val}</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Weight chart */}
+          {(() => {
+            const byDate = {};
+            weighIns.forEach(w => { byDate[w.date] = w.kg; });
+            const startKg = parseFloat(profile.startWeight || profile.weightKg);
+            const startDateStr = profile.startDate || todayStr();
+            const endDate = new Date(profile.deadline);
+            const startDate = new Date(startDateStr);
+
+            // Logged points: start + weigh-ins sorted oldest→newest
+            const loggedPoints = [
+              { date: startDateStr, kg: startKg, isStart: true },
+              ...weighIns.filter(w => w.date !== startDateStr).map(w => ({ date: w.date, kg: w.kg }))
+            ].sort((a, b) => a.date.localeCompare(b.date));
+
+            const W = 300; const H = 130;
+            const PAD = { t: 20, r: 16, b: 28, l: 36 };
+            const innerW = W - PAD.l - PAD.r;
+            const innerH = H - PAD.t - PAD.b;
+            const totalMs = endDate - startDate || 1;
+
+            // x based on real date position across full start→end timeline
+            const dateToX = (dateStr) => {
+              const d = new Date(dateStr);
+              const frac = Math.min(1, Math.max(0, (d - startDate) / totalMs));
+              return PAD.l + frac * innerW;
+            };
+            // end dot always at right edge
+            const endX = PAD.l + innerW;
+
+            const allKg = loggedPoints.map(p => p.kg).concat([profile.targetKg, startKg]);
+            const minY = Math.min(...allKg) - 2;
+            const maxY = Math.max(...allKg) + 2;
+            const range = maxY - minY || 1;
+            const kgToY = (kg) => PAD.t + innerH - ((kg - minY) / range) * innerH;
+            const goalY = kgToY(profile.targetKg);
+            const pointsStr = loggedPoints.map(p => `${dateToX(p.date)},${kgToY(p.kg)}`).join(" ");
+            // Last logged point x (for projection line)
+            const lastX = loggedPoints.length > 0 ? dateToX(loggedPoints[loggedPoints.length - 1].date) : PAD.l;
+            const lastY = loggedPoints.length > 0 ? kgToY(loggedPoints[loggedPoints.length - 1].kg) : kgToY(startKg);
+
+
+
+            return (
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+                {/* Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Weight trend</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>
+                      {startKg} kg → {profile.targetKg} kg
+                    </div>
+                    {weighIns.length > 0 && (
+                      <div style={{ fontSize: 11, marginTop: 4 }}>
+                        {startKg - profile.weightKg > 0
+                          ? <span style={{ color: "#34d399" }}>↓ {(startKg - profile.weightKg).toFixed(1)} kg lost so far 🎉</span>
+                          : profile.weightKg > startKg
+                          ? <span style={{ color: "#f87171" }}>↑ {(profile.weightKg - startKg).toFixed(1)} kg since start — let's get back</span>
+                          : <span style={{ color: "rgba(255,255,255,0.35)" }}>No change yet</span>
+                        }
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => { setShowWeighIn(v => !v); setSelectedChartDate(todayStr()); setChartWeighInput(byDate[todayStr()] ? String(byDate[todayStr()]) : ""); }}
+                    style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", borderRadius: 8, padding: "5px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+                    <Icon name="scale" size={12} color="rgba(255,255,255,0.5)"/>{showWeighIn ? "Close" : "Log weight"}
+                  </button>
+                </div>
+
+                {/* SVG chart — full start→end timeline */}
+                <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+                  <defs>
+                    <linearGradient id="wgGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f97316" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Y grid */}
+                  {[0, 0.5, 1].map(f => {
+                    const kg = minY + f * range;
+                    const y = PAD.t + innerH - f * innerH;
+                    return (
+                      <g key={f}>
+                        <line x1={PAD.l} y1={y} x2={PAD.l + innerW} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                        <text x={PAD.l - 4} y={y + 3} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="8">{kg.toFixed(0)}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Goal dashed line across full width */}
+                  <line x1={PAD.l} y1={goalY} x2={endX} y2={goalY} stroke="#34d399" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.5" />
+                  <text x={endX} y={goalY - 4} textAnchor="end" fill="#34d399" fontSize="8" opacity="0.8">{profile.targetKg} kg</text>
+
+                  {/* Projection line from last logged point → goal dot (dashed, dim) */}
+                  {lastX < endX && (
+                    <line x1={lastX} y1={lastY} x2={endX} y2={goalY}
+                      stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" strokeDasharray="4 4" />
+                  )}
+
+                  {/* Filled area under logged line */}
+                  {loggedPoints.length >= 2 && (
+                    <polygon
+                      points={`${dateToX(startDateStr)},${PAD.t + innerH} ${pointsStr} ${dateToX(loggedPoints[loggedPoints.length-1].date)},${PAD.t + innerH}`}
+                      fill="url(#wgGrad2)" />
+                  )}
+
+                  {/* Trend line through logged points */}
+                  {loggedPoints.length >= 2 && (
+                    <polyline points={pointsStr} fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+
+                  {/* Logged dots */}
+                  {loggedPoints.map((p, i) => {
+                    const x = dateToX(p.date);
+                    const y = kgToY(p.kg);
+                    const prev = loggedPoints[i - 1];
+                    const wentUp = prev && p.kg > prev.kg;
+                    const isLatest = i === loggedPoints.length - 1;
+                    return (
+                      <g key={p.date}>
+                        {isLatest && <circle cx={x} cy={y} r={10} fill="#f97316" opacity="0.1" />}
+                        <circle cx={x} cy={y} r={isLatest ? 5.5 : 4}
+                          fill={p.isStart ? "rgba(249,115,22,0.5)" : wentUp ? "#f87171" : "#f97316"}
+                          stroke="#0f0f11" strokeWidth="1.5" />
+                        <text x={x} y={y - 9} textAnchor="middle" fill={wentUp ? "#f87171" : "#fff"} fontSize="9" fontWeight={isLatest ? "700" : "500"}>{p.kg}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Goal end dot */}
+                  <circle cx={endX} cy={goalY} r={4} fill="rgba(52,211,153,0.6)" stroke="#0f0f11" strokeWidth="1.5" />
+
+                  {/* X axis: start date left, goal date right */}
+                  <text x={PAD.l} y={H - 2} textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="8">
+                    {new Date(startDateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  </text>
+                  <text x={endX} y={H - 2} textAnchor="middle" fill="rgba(52,211,153,0.5)" fontSize="8">
+                    {endDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                  </text>
+                </svg>
+
+                {/* Log panel — date picker starts from profile start date */}
+                {showWeighIn && (
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", marginTop: 12, paddingTop: 14 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input type="date" value={selectedChartDate || todayStr()}
+                        max={todayStr()}
+                        min={profile.startDate || todayStr()}
+                        onChange={e => { setSelectedChartDate(e.target.value); setChartWeighInput(byDate[e.target.value] ? String(byDate[e.target.value]) : ""); }}
+                        style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.7)", fontSize: 13, fontFamily: "inherit", outline: "none", colorScheme: "dark" }} />
+                      <input type="number" min="20" max="400" step="0.1" placeholder="kg" value={chartWeighInput}
+                        onChange={e => setChartWeighInput(e.target.value)}
+                        style={{ width: 72, padding: "9px 10px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit", outline: "none", textAlign: "center" }} />
+                      <button onClick={() => {
+                        const kg = parseFloat(chartWeighInput);
+                        const dateKey = selectedChartDate || todayStr();
+                        if (!kg || kg < 20 || kg > 400) return;
+                        const entry = { date: dateKey, kg };
+                        const filtered = weighIns.filter(w => w.date !== dateKey);
+                        const updated = [entry, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
+                        saveWeighIns(updated);
+                        if (dateKey === todayStr()) {
+                          const newBmi = Math.round((kg / Math.pow(profile.heightCm / 100, 2)) * 10) / 10;
+                          updateProfile({ ...profile, weightKg: kg, bmi: newBmi });
+                        }
+                        setChartWeighInput(""); setShowWeighIn(false); setSelectedChartDate(null);
+                      }} style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "9px 14px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Save</button>
+                    </div>
+                    {byDate[selectedChartDate || todayStr()] && (
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 6 }}>
+                        Previously logged: {byDate[selectedChartDate || todayStr()]} kg
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Weekly bars */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>7-day calories — tap a day to see macros</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 130 }}>
+              {weekBars.map((b, i) => {
+                const h = maxBar > 0 ? Math.round((b.cal / maxBar) * 110) : 0;
+                const over = b.cal > profile.goal;
+                const isSelected = selectedDay === b.dateKey || (selectedDay === null && b.isToday);
+                const barColor = b.cal === 0 ? "rgba(255,255,255,0.05)" : over ? "rgba(248,113,113,0.7)" : "rgba(52,211,153,0.7)";
+                return (
+                  <div key={i} onClick={() => { setSelectedDay(b.dateKey); if (!b.isToday) openPastDay(b.dateKey); else setPastDayKey(null); }} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer" }}>
+                    {b.cal > 0 && <div style={{ fontSize: 9, color: over ? "#f87171" : "#34d399" }}>{b.cal}</div>}
+                    <div style={{ width: "100%", height: Math.max(h, b.cal > 0 ? 4 : 0), background: barColor, borderRadius: "4px 4px 0 0", transition: "height 0.6s ease", outline: isSelected ? `2px solid ${over ? "#f87171" : "#34d399"}` : "none", outlineOffset: 2 }} />
+                    <div style={{ fontSize: 10, color: isSelected ? "#fff" : "rgba(255,255,255,0.35)", fontWeight: isSelected ? 700 : 400 }}>{b.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 11, color: "rgba(255,255,255,0.2)", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Daily goal: {profile.goal} kcal · <span style={{ color: "#34d399" }}>● on track</span> · <span style={{ color: "#f87171" }}>● over</span></span>
+              <span style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316", borderRadius: 99, padding: "3px 9px", fontSize: 10, fontWeight: 600, whiteSpace: "nowrap" }}>✏ tap past days to log</span>
+            </div>
+          </div>
+
+          {/* Day detail + past logging panel */}
+          {(() => {
+            const selKey = selectedDay || today;
+            const selBar = weekBars.find(b => b.dateKey === selKey) || weekBars[weekBars.length - 1];
+            const selEntries = log[selKey] || [];
+            const selP = selEntries.reduce((s, e) => s + e.protein, 0);
+            const selC = selEntries.reduce((s, e) => s + e.carbs, 0);
+            const selF = selEntries.reduce((s, e) => s + e.fat, 0);
+            const selCal = selEntries.reduce((s, e) => s + e.calories, 0);
+            const selLabel = selKey === today ? "Today" : selBar ? selBar.label : selKey;
+            const isPast = selKey !== today;
+            const pastAct = activityData[selKey] || { steps: 0, waterMl: 0, exercises: [] };
+
+            return (
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, overflow: "hidden" }}>
+                {/* Header */}
+                <div style={{ padding: "16px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>{selLabel}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{selCal} kcal logged</div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {isPast && (
+                      <button onClick={() => openPastDay(selKey)} style={{ background: pastDayKey === selKey ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.07)", border: "1px solid " + (pastDayKey === selKey ? "rgba(249,115,22,0.5)" : "rgba(255,255,255,0.1)"), color: pastDayKey === selKey ? "#f97316" : "rgba(255,255,255,0.6)", borderRadius: 9, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        {pastDayKey === selKey ? "Close" : "✏ Edit day"}
+                      </button>
+                    )}
+                    {!isPast && (
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "5px 10px" }}>Log in Today tab</div>
+                    )}
+                    {selKey !== today && <button onClick={() => { setSelectedDay(null); setPastDayKey(null); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer" }}>Back</button>}
+                  </div>
+                </div>
+
+                {/* Macros summary */}
+                <div style={{ padding: "14px 16px" }}>
+                  {selCal === 0 ? (
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", textAlign: "center", padding: "10px 0" }}>No food logged {selKey === today ? "today" : "this day"}</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 12 }}>Total: <span style={{ color: "#fff", fontWeight: 700 }}>{selCal} kcal</span></div>
+                      {[["Protein", selP, profile.protein, true], ["Carbs", selC, profile.carbs, false], ["Fat", selF, profile.fat, false]].map(([name, val, target, isProtein]) => {
+                        const over  = val > target;
+                        const met   = val >= target;
+                        const under = isProtein && !met && val > 0;
+                        const color = over ? "#f87171" : met && isProtein ? "#34d399" : under ? "#f97316" : "rgba(255,255,255,0.5)";
+                        return (
+                          <div key={name} style={{ marginBottom: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+                              <span style={{ color }}>{name}</span>
+                              <span style={{ fontWeight: 700, color: over || under || (met && isProtein) ? color : "#fff" }}>
+                                {val}g
+                                {over ? <span style={{ fontSize: 11, marginLeft: 5 }}>+{val - target}g over</span>
+                                      : met && isProtein ? <span style={{ fontSize: 11, marginLeft: 5 }}>✓</span>
+                                      : <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}> / {target}g</span>}
+                              </span>
+                            </div>
+                            <ProgressBar pct={Math.min(100, Math.round(val / target * 100))} color={color} h={5} />
+                          </div>
+                        );
+                      })}
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10, marginTop: 4 }}>
+                        {selEntries.map(e => (
+                          <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: MEAL_COLORS[e.meal] || "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+                            <div style={{ flex: 1, fontSize: 12 }}>{e.name}</div>
+                            <div style={{ fontSize: 12, color: "#f97316", fontWeight: 700 }}>{e.calories}</div>
+                            {isPast && <button onClick={() => removePastEntry(selKey, e.id)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 14 }}>✕</button>}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* ── PAST DAY EDITOR (only for past days when open) ── */}
+                {isPast && pastDayKey === selKey && (
+                  <div style={{ borderTop: "1px solid rgba(249,115,22,0.2)", background: "rgba(249,115,22,0.03)", padding: "16px" }}>
+                    <div style={{ fontSize: 11, color: "#f97316", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>Log past data — {selLabel}</div>
+
+                    {/* ── Add food via AI scan ── */}
+                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px", marginBottom: 12, border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, display:"flex", alignItems:"center", gap:6 }}><Icon name="camera" size={14} color="#f97316"/> Scan food for {selLabel}</div>
+                      <input type="file" ref={pastFileRef} accept="image/*" style={{ display: "none" }} onChange={handlePastFile} />
+
+                      {!pastScanPreview ? (
+                        <div style={{ textAlign: "center", padding: "10px 0" }}>
+                          <div style={{ marginBottom: 8 }}><Icon name="camera" size={32} color="rgba(255,255,255,0.35)"/></div>
+                          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 12 }}>AI identifies calories & macros instantly</div>
+                          <button onClick={() => pastFileRef.current.click()} style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "10px 22px", borderRadius: 99, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(249,115,22,0.35)" }}>
+                            Choose photo
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ position: "relative", marginBottom: 10 }}>
+                            <img src={pastScanPreview} alt="" style={{ width: "100%", borderRadius: 10, maxHeight: 160, objectFit: "cover", display: "block" }} />
+                            <button onClick={() => { setPastScanPreview(null); setPastScanB64(null); setPastScanResult(null); setPastScanError(""); if (pastFileRef.current) pastFileRef.current.value = ""; }}
+                              style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: "50%", background: "rgba(0,0,0,0.65)", border: "none", color: "#fff", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>✕</button>
+                          </div>
+                          {pastScanLoading ? (
+                            <div style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.5)", padding: "8px 0" }}>Analysing…</div>
+                          ) : !pastScanResult ? (
+                            <button onClick={analysePast} style={{ width: "100%", background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "11px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" }}><Icon name="scan" size={14} color="#fff"/> Analyse</button>
+                          ) : null}
+                        </div>
+                      )}
+
+                      {pastScanError && <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171", padding: "8px 12px", borderRadius: 9, fontSize: 12, marginTop: 8 }}>⚠ {pastScanError}</div>}
+
+                      {pastScanResult && (
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                            <Icon name="food" size={18} color="#f97316"/>
+                            <div style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{pastScanResult.name}</div>
+                            <div style={{ background: "#f97316", color: "#fff", padding: "3px 10px", borderRadius: 99, fontSize: 12, fontWeight: 700 }}>{pastScanResult.calories} kcal</div>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 10 }}>
+                            {[["Protein", pastScanResult.protein_g, "rgba(255,255,255,0.6)"], ["Carbs", pastScanResult.carbs_g, "rgba(255,255,255,0.6)"], ["Fat", pastScanResult.fat_g, "rgba(255,255,255,0.6)"]].map(([n, v, c]) => (
+                              <div key={n} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 8, padding: "8px", textAlign: "center" }}>
+                                <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}g</div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{n}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                            {["breakfast","lunch","dinner","snack"].map(m => (
+                              <button key={m} onClick={() => setPastMeal(m)} style={{ flex: 1, padding: "7px 4px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, textTransform: "capitalize", background: pastMeal === m ? MEAL_COLORS[m] : "rgba(255,255,255,0.07)", color: pastMeal === m ? "#fff" : "rgba(255,255,255,0.45)" }}>{m}</button>
+                            ))}
+                          </div>
+                          <div style={{ display: "flex", gap: 7 }}>
+                            <button onClick={() => {
+                              const entry = { id: Date.now(), name: pastScanResult.name, calories: pastScanResult.calories, protein: pastScanResult.protein_g, carbs: pastScanResult.carbs_g, fat: pastScanResult.fat_g, meal: pastMeal };
+                              setLog({ ...log, [selKey]: [...(log[selKey] || []), entry] });
+                              setPastScanPreview(null); setPastScanB64(null); setPastScanResult(null); setPastScanError(""); if (pastFileRef.current) pastFileRef.current.value = "";
+                            }} style={{ flex: 1, background: "linear-gradient(135deg,#f97316,#ea580c)", color: "#fff", border: "none", padding: "10px", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Log to {selLabel}</button>
+                            <button onClick={() => { setPastScanPreview(null); setPastScanB64(null); setPastScanResult(null); if (pastFileRef.current) pastFileRef.current.value = ""; }} style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "none", padding: "10px 12px", borderRadius: 10, cursor: "pointer", fontSize: 12 }}>Retry</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Steps ── */}
+                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px", marginBottom: 12, border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, display:"flex", alignItems:"center", gap:6 }}><Icon name="steps" size={13} color="#34d399"/>Steps</div>
+                        <div style={{ fontSize: 13, color: "#34d399", fontWeight: 700 }}>{(pastAct.steps || 0).toLocaleString()} steps</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 7 }}>
+                        <input type="number" min="0" max="100000" placeholder="e.g. 8000" value={pastStepsInput} onChange={e => setPastStepsInput(e.target.value)}
+                          style={{ flex: 1, padding: "9px 12px", borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 13, fontFamily: "inherit" }} />
+                        <button onClick={() => { saveActivityForDay(selKey, { ...pastAct, steps: Math.max(0, parseInt(pastStepsInput)||0) }); }}
+                          style={{ background: "#34d399", color: "#0f0f11", border: "none", padding: "9px 14px", borderRadius: 9, fontWeight: 800, fontSize: 13, cursor: "pointer" }}>Save</button>
+                      </div>
+                      {pastStepsInput && <div style={{ fontSize: 11, color: "rgba(52,211,153,0.6)", marginTop: 6 }}>+{stepCalsBurned(parseInt(pastStepsInput)||0)} kcal burned</div>}
+                    </div>
+
+                    {/* ── Exercise ── */}
+                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px", marginBottom: 12, border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: (pastAct.exercises||[]).length > 0 ? 10 : (pastShowExercise ? 12 : 0) }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Icon name="run" size={18} color="#f97316"/>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>Exercise</div>
+                            <div style={{ fontSize: 11, color: "#f97316" }}>+{(pastAct.exercises||[]).reduce((s,e)=>s+e.burned,0)} kcal earned</div>
+                          </div>
+                        </div>
+                        <button onClick={() => setPastShowExercise(v => !v)} style={{ background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.3)", color: "#f97316", borderRadius: 8, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          {pastShowExercise ? "Close" : "+ Add"}
+                        </button>
+                      </div>
+
+                      {pastShowExercise && (
+                        <div style={{ background: "rgba(249,115,22,0.05)", border: "1px solid rgba(249,115,22,0.15)", borderRadius: 11, padding: "13px", marginBottom: (pastAct.exercises||[]).length > 0 ? 10 : 0 }}>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 9 }}>Select exercise</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
+                            {EXERCISES.map(ex => (
+                              <button key={ex.label} onClick={() => setPastExType(ex)} style={{ padding: "5px 9px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11, background: pastExType.label === ex.label ? "rgba(249,115,22,0.25)" : "rgba(255,255,255,0.05)", color: pastExType.label === ex.label ? "#f97316" : "rgba(255,255,255,0.5)", outline: pastExType.label === ex.label ? "1.5px solid #f97316" : "none" }}>{ex.icon} {ex.label}</button>
+                            ))}
+                          </div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 7 }}>Duration (minutes)</div>
+                          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                            {["15","30","45","60","90"].map(m => (
+                              <button key={m} onClick={() => setPastExMins(m)} style={{ flex: 1, padding: "7px 3px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: pastExMins === m ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.05)", color: pastExMins === m ? "#f97316" : "rgba(255,255,255,0.5)", outline: pastExMins === m ? "1.5px solid #f97316" : "none" }}>{m}m</button>
+                            ))}
+                          </div>
+                          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 10 }}>{pastExType.icon} {pastExType.label} · {pastExMins} min = <span style={{ color: "#f97316", fontWeight: 700 }}>+{exerciseCalsBurned(pastExType.met, parseInt(pastExMins)||0, profile.weightKg)} kcal</span></div>
+                          <div style={{ display: "flex", gap: 7 }}>
+                            <button onClick={() => {
+                              const burned = exerciseCalsBurned(pastExType.met, parseInt(pastExMins)||0, profile.weightKg);
+                              const newEx = { id: Date.now(), label: pastExType.label, icon: pastExType.icon, mins: parseInt(pastExMins), burned };
+                              saveActivityForDay(selKey, { ...pastAct, exercises: [...(pastAct.exercises||[]), newEx] });
+                              setPastShowExercise(false);
+                            }} style={{ flex: 1, background: "#f97316", color: "#fff", border: "none", padding: "10px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Log exercise</button>
+                            <button onClick={() => setPastShowExercise(false)} style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "none", padding: "10px 13px", borderRadius: 9, cursor: "pointer" }}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {(pastAct.exercises||[]).length === 0 && !pastShowExercise ? (
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", textAlign: "center", paddingTop: 8 }}>No exercise logged yet</div>
+                      ) : (
+                        (pastAct.exercises||[]).map(ex => (
+                          <div key={ex.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                            <span style={{ fontSize: 15 }}>{ex.icon}</span>
+                            <div style={{ flex: 1, fontSize: 12 }}>{ex.label} · {ex.mins}m</div>
+                            <div style={{ fontSize: 12, color: "#f97316", fontWeight: 700 }}>+{ex.burned} kcal</div>
+                            <button onClick={() => saveActivityForDay(selKey, { ...pastAct, exercises: (pastAct.exercises||[]).filter(e => e.id !== ex.id) })} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", cursor: "pointer", fontSize: 13 }}>✕</button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* ── Water ── */}
+                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <Icon name="water" size={20} color="rgba(255,255,255,0.6)"/>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14 }}>Water intake</div>
+                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{pastAct.waterMl||0} ml of {WATER_GOAL_ML} ml goal</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <button onClick={() => saveActivityForDay(selKey, { ...pastAct, waterMl: Math.max(0, (pastAct.waterMl||0) - GLASS_ML) })} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", minWidth: 28, textAlign: "center" }}>{Math.round((pastAct.waterMl||0)/GLASS_ML)}</div>
+                          <button onClick={() => saveActivityForDay(selKey, { ...pastAct, waterMl: Math.min(WATER_GOAL_ML*2, (pastAct.waterMl||0) + GLASS_ML) })} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(96,165,250,0.15)", border: "1px solid rgba(96,165,250,0.3)", color: "rgba(255,255,255,0.7)", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
+                        {Array.from({ length: Math.round(WATER_GOAL_ML / GLASS_ML) }).map((_, i) => {
+                          const filled = i < Math.round((pastAct.waterMl||0) / GLASS_ML);
+                          return (
+                            <button key={i} onClick={() => saveActivityForDay(selKey, { ...pastAct, waterMl: (i + 1) * GLASS_ML })}
+                              style={{ width: 30, height: 34, borderRadius: 6, border: "1.5px solid " + (filled ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.08)"), background: filled ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>
+                              {filled ? <Icon name="water" size={12} color="rgba(255,255,255,0.7)"/> : <span style={{color:"rgba(255,255,255,0.15)",fontSize:10}}>○</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <ProgressBar pct={Math.round((pastAct.waterMl||0) / WATER_GOAL_ML * 100)} color="rgba(255,255,255,0.35)" h={4} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ─── PROFILE ─── */}
+      {tab === "profile" && (
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "18px 20px 80px" }}>
+
+          {/* ── EDIT PROFILE PANEL ── */}
+          {showEditProfile && editProf && (
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, padding: "18px 16px", marginBottom: 14, border: "1.5px solid rgba(249,115,22,0.3)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>Edit Profile</div>
+                <button onClick={() => { setShowEditProfile(false); setShowAvatarPicker(false); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.55)", fontSize: 20, cursor: "pointer" }}>✕</button>
+              </div>
+
+              {/* Avatar picker */}
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", background: editProf.avatarImg ? "transparent" : (editProf.avatarColor || "#f97316"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto", cursor: "pointer", border: "3px solid rgba(249,115,22,0.5)", overflow: "hidden" }} onClick={() => setShowAvatarPicker(!showAvatarPicker)}>
+                    {editProf.avatarImg
+                      ? <img src={editProf.avatarImg} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (editProf.avatar || "👤")
+                    }
+                  </div>
+                  <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#f97316", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, cursor: "pointer" }} onClick={() => setShowAvatarPicker(!showAvatarPicker)}>✏</div>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>Tap to change avatar</div>
+              </div>
+
+              {/* Avatar emoji grid */}
+              {showAvatarPicker && (
+                <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: 14, marginBottom: 14 }}>
+
+                  {/* Upload photo option — always at the top */}
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Upload photo</div>
+                  <input
+                    type="file"
+                    ref={avatarFileRef}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={e => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      // Resize & compress to base64 using a canvas
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        const img = new Image();
+                        img.onload = () => {
+                          const canvas = document.createElement("canvas");
+                          const size = 200;
+                          canvas.width = size; canvas.height = size;
+                          const ctx = canvas.getContext("2d");
+                          // crop square from centre
+                          const min = Math.min(img.width, img.height);
+                          const sx = (img.width - min) / 2;
+                          const sy = (img.height - min) / 2;
+                          ctx.beginPath();
+                          ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
+                          ctx.clip();
+                          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+                          const base64 = canvas.toDataURL("image/jpeg", 0.75);
+                          setEditProf(p => ({ ...p, avatarImg: base64, avatar: null }));
+                          setShowAvatarPicker(false);
+                        };
+                        img.src = ev.target.result;
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  <button
+                    onClick={() => avatarFileRef.current.click()}
+                    style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px dashed rgba(249,115,22,0.4)", background: "rgba(249,115,22,0.07)", color: "#f97316", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  >
+                    Choose from camera / photos
+                  </button>
+
+                  {/* Remove custom photo option */}
+                  {editProf.avatarImg && (
+                    <button onClick={() => setEditProf(p => ({ ...p, avatarImg: null, avatar: "👤" }))} style={{ width: "100%", padding: "9px", borderRadius: 10, border: "1px solid rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.07)", color: "#f87171", fontSize: 12, fontWeight: 600, cursor: "pointer", marginBottom: 14 }}>
+                      ✕ Remove photo — use emoji instead
+                    </button>
+                  )}
+
+                  {/* Emoji grid */}
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Or choose an emoji</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    {AVATARS.map(a => (
+                      <button key={a} onClick={() => setEditProf(p => ({ ...p, avatar: a, avatarImg: null }))} style={{ width: 42, height: 42, borderRadius: 10, border: `2px solid ${editProf.avatar === a && !editProf.avatarImg ? "#f97316" : "rgba(255,255,255,0.08)"}`, background: editProf.avatar === a && !editProf.avatarImg ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.05)", fontSize: 20, cursor: "pointer" }}>{a}</button>
+                    ))}
+                  </div>
+
+                  {/* Colour swatches — only when no photo */}
+                  {!editProf.avatarImg && (
+                    <>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Background colour</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {AVATAR_COLORS.map(c => (
+                          <button key={c} onClick={() => setEditProf(p => ({ ...p, avatarColor: c }))} style={{ width: 28, height: 28, borderRadius: "50%", background: c, border: `3px solid ${editProf.avatarColor === c ? "#fff" : "transparent"}`, cursor: "pointer" }} />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Editable fields */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Name */}
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Name</div>
+                  <input value={editProf.name} onChange={e => setEditProf(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                </div>
+
+                {/* Current weight + Target weight */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Current weight (kg)</div>
+                    <input type="number" min="30" max="300" step="0.1" value={editProf.weightKg} onChange={e => setEditProf(p => ({ ...p, weightKg: parseFloat(e.target.value) || p.weightKg }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Target weight (kg)</div>
+                    <input type="number" min="30" max="300" step="0.1" value={editProf.targetKg} onChange={e => setEditProf(p => ({ ...p, targetKg: parseFloat(e.target.value) || p.targetKg }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                  </div>
+                </div>
+
+                {/* Goal deadline */}
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Goal deadline</div>
+                  <input type="date" value={editProf.deadline ? editProf.deadline.split("T")[0] : ""} min={todayStr()} onChange={e => setEditProf(p => ({ ...p, deadline: new Date(e.target.value).toISOString() }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", colorScheme: "dark" }} />
+                </div>
+
+                {/* Calorie goal */}
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Daily calorie goal (kcal)</div>
+                  <input type="number" min="800" max="5000" value={editProf.goal} onChange={e => setEditProf(p => ({ ...p, goal: parseInt(e.target.value) || p.goal }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 11, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#f0f0f0", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                </div>
+
+                {/* Activity level */}
+                <div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Activity level</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {ACTIVITIES.map(a => (
+                      <button key={a.mult} onClick={() => setEditProf(p => ({ ...p, actMult: a.mult, actLabel: a.label }))} style={{ padding: "10px 14px", borderRadius: 10, border: "none", cursor: "pointer", background: editProf.actMult === a.mult ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.05)", borderLeft: `3px solid ${editProf.actMult === a.mult ? "#f97316" : "transparent"}`, color: "#f0f0f0", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{a.label}</div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{a.sub}</div>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#f97316", fontWeight: 700 }}>×{a.mult}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Save / Cancel */}
+              <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                <button onClick={() => {
+                  // Recalculate BMR/TDEE with new values
+                  const newBmr = editProf.gender === "male"
+                    ? 10 * editProf.weightKg + 6.25 * editProf.heightCm - 5 * editProf.age + 5
+                    : 10 * editProf.weightKg + 6.25 * editProf.heightCm - 5 * editProf.age - 161;
+                  const newTdee = Math.round(newBmr * editProf.actMult);
+                  const newBmi = Math.round((editProf.weightKg / Math.pow(editProf.heightCm / 100, 2)) * 10) / 10;
+                  const updated = { ...editProf, bmr: Math.round(newBmr), tdee: newTdee, bmi: newBmi };
+                  updateProfile(updated);
+                  setShowEditProfile(false);
+                  setShowAvatarPicker(false);
+                }} style={{ flex: 1, background: "#f97316", color: "#fff", border: "none", padding: "13px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                  Save changes ✓
+                </button>
+                <button onClick={() => { setShowEditProfile(false); setShowAvatarPicker(false); }} style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "none", padding: "13px 16px", borderRadius: 12, cursor: "pointer" }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── PROFILE HERO ── */}
+          {!showEditProfile && (
+            <div style={{ background: "#18181b", borderRadius: 20, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 14, textAlign: "center", padding: "28px 20px 24px" }}>
+              <div style={{ position: "relative", display: "inline-block", marginBottom: 14 }}>
+                <div style={{ width: 72, height: 72, borderRadius: "50%", background: profile.avatarImg ? "transparent" : (profile.avatarColor || "#f97316"), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, margin: "0 auto", overflow: "hidden" }}>
+                  {profile.avatarImg
+                    ? <img src={profile.avatarImg} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (profile.avatar || "👤")
+                  }
+                </div>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800 }}>{profile.name}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 5 }}>
+                {profile.weightKg} kg → {profile.targetKg} kg in {profile.months} month{profile.months > 1 ? "s" : ""}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: "rgba(255,255,255,0.08)", borderRadius: 14, overflow: "hidden", marginTop: 18 }}>
+                {[["Age", profile.age + " yrs"], ["Height", Math.floor(profile.heightCm / 30.48) + "ft " + Math.round((profile.heightCm / 2.54) % 12) + "in"], ["BMI", profile.bmi]].map(([l, v]) => (
+                  <div key={l} style={{ background: "rgba(255,255,255,0.05)", padding: "12px 8px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800 }}>{v}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 3 }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setEditProf({ ...profile }); setShowEditProfile(true); setShowAvatarPicker(false); }} style={{ marginTop: 16, background: "rgba(249,115,22,0.15)", border: "1.5px solid rgba(249,115,22,0.3)", color: "#f97316", borderRadius: 12, padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                Edit Profile
+              </button>
+            </div>
+          )}
+
+          {/* ── SETTINGS READ-ONLY ── */}
+          {!showEditProfile && (
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 18, border: "1px solid rgba(255,255,255,0.08)", marginBottom: 14, padding: 0, overflow: "hidden" }}>
+              {[
+                { icon: "target", label: "Daily calorie goal", val: profile.goal + " kcal", bg: "rgba(249,115,22,0.12)" },
+                { icon: "scale", label: "Current weight",     val: profile.weightKg + " kg",   bg: "rgba(255,255,255,0.06)" },
+                { icon: "flag", label: "Target weight",      val: profile.targetKg + " kg",   bg: "rgba(255,255,255,0.06)" },
+                { icon: "run", label: "Activity level",     val: profile.actLabel,           bg: "rgba(255,255,255,0.06)" },
+                { icon: "calendar", label: "Goal deadline",      val: deadline.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }), bg: "rgba(255,255,255,0.06)" },
+                { icon: "activity", label: "BMR",                val: profile.bmr + " kcal",      bg: "rgba(255,255,255,0.06)" },
+                { icon: "flame", label: "TDEE",               val: profile.tdee + " kcal",     bg: "rgba(255,255,255,0.06)" },
+              ].map((s, i, arr) => (
+                <div key={s.label} style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name={s.icon} size={16} color="rgba(255,255,255,0.6)"/></div>
+                  <div style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{s.label}</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+
+          {!showEditProfile && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button style={{ width: "100%", padding: "14px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
+                onClick={() => onReset()}>
+                Log out
+              </button>
+              <button style={{ width: "100%", padding: "14px", borderRadius: 14, border: "1px solid rgba(248,113,113,0.25)", background: "rgba(248,113,113,0.1)", color: "#f87171", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                onClick={() => {
+                  if (resetConfirm) {
+                    try { localStorage.removeItem(STORE_KEY); localStorage.removeItem("nutriai_activity"); localStorage.removeItem("nutriai_weighins"); localStorage.removeItem(XP_KEY); localStorage.removeItem(CHALLENGES_KEY); } catch(_) {}
+                    onHardReset();
+                  } else {
+                    setResetConfirm(true);
+                    setTimeout(() => setResetConfirm(false), 3000);
+                  }
+                }}>
+                {resetConfirm ? "Tap again to confirm — this can't be undone" : "Reset & start over"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+const SECRET_QUESTIONS = [
+  "What was the name of your first pet?",
+  "What city were you born in?",
+  "What is your mother's maiden name?",
+  "What was the name of your first school?",
+  "What was your childhood nickname?",
+];
+
+const authInputStyle = { width: "100%", padding: "13px 16px", borderRadius: 12, border: "1.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "inherit", colorScheme: "dark" };
+const authLabelStyle = { fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7, display: "block" };
+
+function MaskedInput({ value, onChange, placeholder, style }) {
+  const [display, setDisplay] = useState("");
+  const timerRef = useRef(null);
+
+  const handleChange = (e) => {
+    const newVal = e.target.value;
+    // Build display: all bullets except last char shown briefly
+    const masked = "•".repeat(Math.max(0, newVal.length - 1)) + (newVal.length > 0 ? newVal[newVal.length - 1] : "");
+    setDisplay(masked);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setDisplay("•".repeat(newVal.length));
+    }, 600);
+    onChange(newVal);
+  };
+
+  // Sync display length if value cleared externally
+  useEffect(() => {
+    if (value === "") setDisplay("");
+  }, [value]);
+
+  return (
+    <input
+      style={style}
+      type="text"
+      placeholder={placeholder}
+      value={display}
+      onChange={handleChange}
+    />
+  );
+}
+
+function SignupScreen({ onBack, onDone }) {
+  const [su, setSu] = useState({ email: "", password: "", secretQ: SECRET_QUESTIONS[0], secretA: "" });
+  const [err, setErr] = useState("");
+  const handle = () => {
+    if (!su.email.includes("@")) { setErr("Please enter a valid email"); return; }
+    if (su.password.length < 4) { setErr("Password must be at least 4 characters"); return; }
+    if (!su.secretA.trim()) { setErr("Please answer the secret question"); return; }
+    onDone({ email: su.email, password: su.password, secretQ: su.secretQ, secretA: su.secretA.trim().toLowerCase() });
+  };
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 360 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 14, cursor: "pointer", marginBottom: 28, padding: 0 }}>← Back</button>
+        <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", marginBottom: 6 }}>Create account</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 32 }}>Set up your credentials first</div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={authLabelStyle}>Email</label>
+          <input style={authInputStyle} type="email" placeholder="you@example.com" value={su.email} onChange={e => { setSu(p => ({...p, email: e.target.value})); setErr(""); }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={authLabelStyle}>Password</label>
+          <MaskedInput style={authInputStyle} placeholder="Choose a password" value={su.password} onChange={v => { setSu(p => ({...p, password: v})); setErr(""); }} />
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label style={authLabelStyle}>Secret question</label>
+          <select value={su.secretQ} onChange={e => setSu(p => ({...p, secretQ: e.target.value}))} style={{ ...authInputStyle, marginBottom: 10 }}>
+            {SECRET_QUESTIONS.map(q => <option key={q} value={q} style={{ background: "#1a1a1e" }}>{q}</option>)}
+          </select>
+          <input style={authInputStyle} type="text" placeholder="Your answer (remember this!)" value={su.secretA} onChange={e => { setSu(p => ({...p, secretA: e.target.value})); setErr(""); }} />
+        </div>
+        {err && <div style={{ color: "#f87171", fontSize: 13, marginTop: 8, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
+        <div style={{ marginTop: 24 }}>
+          <PrimaryBtn onClick={handle} style={{ borderRadius: 99, fontSize: 16, padding: "15px" }}>Next: Set up profile →</PrimaryBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onBack, onSuccess, onReset }) {
+  const [li, setLi] = useState({ email: "", password: "" });
+  const [err, setErr] = useState("");
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [secretAnswer, setSecretAnswer] = useState("");
+  const [secretAttempts, setSecretAttempts] = useState(0);
+  const [showResetOption, setShowResetOption] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [savedCreds, setSavedCreds] = useState(null);
+  const MAX_ATTEMPTS = 3;
+  const errIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+
+  useEffect(() => { loadData().then(d => { if (d?.profile) setSavedCreds(d.profile); }); }, []);
+
+  const handleLogin = async () => {
+    const saved = await loadData();
+    if (!saved?.profile) { setErr("No account found. Please create one."); return; }
+    if (li.email.toLowerCase() !== (saved.profile.email || "").toLowerCase()) { setErr("Email not recognised"); return; }
+    if (li.password !== saved.profile.password) {
+      const attempts = loginAttempts + 1;
+      setLoginAttempts(attempts);
+      if (attempts >= MAX_ATTEMPTS) {
+        setErr("Wrong password. " + MAX_ATTEMPTS + " failed attempts — try 'Forgot password?' or reset below.");
+      } else {
+        const left = MAX_ATTEMPTS - attempts;
+        setErr("Wrong password. " + left + " attempt" + (left === 1 ? "" : "s") + " left before reset option appears.");
+      }
+      return;
+    }
+    onSuccess(saved);
+  };
+
+  const handleForgot = async () => {
+    const saved = await loadData();
+    if (!saved?.profile) { setErr("No account found."); return; }
+    if (secretAnswer.trim().toLowerCase() !== (saved.profile.secretA || "")) {
+      const attempts = secretAttempts + 1;
+      setSecretAttempts(attempts);
+      if (attempts >= MAX_ATTEMPTS) {
+        setShowResetOption(true);
+        setErr("Answer doesn't match. You can reset your account below.");
+      } else {
+        const left2 = MAX_ATTEMPTS - attempts;
+        setErr("Answer doesn't match. " + left2 + " attempt" + (left2 === 1 ? "" : "s") + " left.");
+      }
+      return;
+    }
+    onSuccess(saved);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 360 }}>
+        <button onClick={forgotMode ? () => { setForgotMode(false); setErr(""); setSecretAttempts(0); setShowResetOption(false); setResetConfirm(false); } : onBack} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 14, cursor: "pointer", marginBottom: 28, padding: 0 }}>← Back</button>
+        <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", marginBottom: 6 }}>
+          {forgotMode ? "Forgot password?" : "Welcome back 👋"}
+        </div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 32 }}>
+          {forgotMode ? "Answer your secret question to get back in" : "Log in to your account"}
+        </div>
+
+        {!forgotMode ? (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label style={authLabelStyle}>Email</label>
+              <input style={authInputStyle} type="email" placeholder="you@example.com" value={li.email} onChange={e => { setLi(p => ({...p, email: e.target.value})); setErr(""); }} />
+            </div>
+            <div style={{ marginBottom: 8 }}>
+              <label style={authLabelStyle}>Password</label>
+              <MaskedInput style={authInputStyle} placeholder="Your password" value={li.password} onChange={v => { setLi(p => ({...p, password: v})); setErr(""); }} />
+            </div>
+            {err && <div style={{ color: "#f87171", fontSize: 13, marginTop: 8, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>{errIcon}{err}</div>}
+            {/* Attempt dots */}
+            {loginAttempts > 0 && loginAttempts < MAX_ATTEMPTS && (
+              <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < loginAttempts ? "#f87171" : "rgba(255,255,255,0.1)" }} />
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+              <PrimaryBtn onClick={handleLogin} style={{ borderRadius: 99, fontSize: 16, padding: "15px" }}>Log in →</PrimaryBtn>
+              <button onClick={() => { setForgotMode(true); setErr(""); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 14, cursor: "pointer", padding: "8px 0" }}>
+                Forgot password?
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {savedCreds?.secretQ && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Your secret question</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", lineHeight: 1.4 }}>{savedCreds.secretQ}</div>
+              </div>
+            )}
+            <div style={{ marginBottom: 8 }}>
+              <label style={authLabelStyle}>Your answer</label>
+              <input style={authInputStyle} type="text" placeholder="Type your answer" value={secretAnswer} onChange={e => { setSecretAnswer(e.target.value); setErr(""); }} />
+            </div>
+            {err && <div style={{ color: "#f87171", fontSize: 13, marginTop: 8, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>{errIcon}{err}</div>}
+            {/* Attempt dots */}
+            {secretAttempts > 0 && !showResetOption && (
+              <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < secretAttempts ? "#f87171" : "rgba(255,255,255,0.1)" }} />
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+              {!showResetOption && (
+                <PrimaryBtn onClick={handleForgot} style={{ borderRadius: 99, fontSize: 16, padding: "15px" }}>Verify & log in →</PrimaryBtn>
+              )}
+              {/* Reset option after 3 failed secret attempts */}
+              {showResetOption && (
+                <div style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: 16, padding: "16px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>Can't remember your answer?</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 14, lineHeight: 1.5 }}>You can reset your account and start fresh. This will permanently delete all your data.</div>
+                  <button onClick={() => {
+                    if (resetConfirm) { onReset(); }
+                    else { setResetConfirm(true); setTimeout(() => setResetConfirm(false), 4000); }
+                  }} style={{ width: "100%", padding: "13px", borderRadius: 12, border: "1px solid rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.1)", color: "#f87171", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                    {resetConfirm ? "Tap again to confirm — all data will be lost" : "Reset account & start over"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════
+// ROOT
+// ════════════════════════════════════════════
+function App() {
+  const [phase, setPhase] = useState("boot");
+  const [step, setStep]   = useState(1);
+  const [form, setForm]   = useState({ name: "", email: "", password: "", secretQ: "What was the name of your first pet?", secretA: "", gender: "female", dob: "", heightCm: 0, weightKg: "", targetKg: "", months: 3, actMult: 1.2, actLabel: "Sedentary" });
+  const [profile, setProfile] = useState(null);
+  const [plan, setPlan]       = useState(null);
+  const [log, setLogState]    = useState({});
+  const [activityData, setActivityData] = useState({});
+
+  const updateProfile = (updated) => {
+    setProfile(updated);
+    saveData({ profile: updated, log });
+  };
+
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await loadData();
+        if (saved?.profile?.goal) {
+          setPhase("login");
+        } else {
+          setPhase("splash");
+        }
+        try {
+          const r = localStorage.getItem("nutriai_activity");
+          setActivityData(r ? JSON.parse(r) : {});
+        } catch(_) { setActivityData({}); }
+      } catch(_) {
+        setPhase("splash");
+      }
+    })();
+  }, []);
+
+  const setLog = (newLog) => {
+    setLogState(newLog);
+    saveData({ profile, log: newLog });
+  };
+
+  const setField = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const finishOnboarding = () => {
+    const age = calcAge(form.dob);
+    const full = { ...form, age, weightKg: parseFloat(form.weightKg), targetKg: parseFloat(form.targetKg) };
+    const computed = calcPlan(full);
+    setPlan(computed);
+    setProfile({ ...full, ...computed, startWeight: form.weightKg, startDate: todayStr() });
+    setPhase("results");
+  };
+
+  const launchApp = (finalProfile) => {
+    saveData({ profile: finalProfile, log });
+    setProfile(finalProfile);
+    setPhase("app");
+  };
+
+  const logout = () => {
+    setProfile(null); setPlan(null); setLogState({}); setActivityData({});
+    setStep(1); setForm({ name: "", gender: "female", dob: "", heightCm: 0, weightKg: "", targetKg: "", months: 3, actMult: 1.2, actLabel: "Sedentary" });
+    setPhase("login");
+  };
+
+  const reset = () => {
+    setProfile(null); setPlan(null); setLogState({}); setActivityData({});
+    try { localStorage.removeItem(STORE_KEY); localStorage.removeItem("nutriai_activity"); localStorage.removeItem("nutriai_weighins"); localStorage.removeItem(XP_KEY); localStorage.removeItem(CHALLENGES_KEY); } catch(_) {}
+    setStep(1); setForm({ name: "", gender: "female", dob: "", heightCm: 0, weightKg: "", targetKg: "", months: 3, actMult: 1.2, actLabel: "Sedentary" });
+    setPhase("splash");
+  };
+
+  if (phase === "boot") return (
+    <div style={{ minHeight: "100vh", background: "#0f0f11", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: "#f97316", fontSize: 16, fontFamily: "system-ui,sans-serif" }}>Loading…</div>
+    </div>
+  );
+
+  if (phase === "splash") return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 24px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ fontSize: 48, fontWeight: 900, color: "#fff", letterSpacing: "-2px", marginBottom: 10 }}>
+        Nutri<span style={{ color: "#f97316" }}>AI</span>
+      </div>
+      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.35)", marginBottom: 48, lineHeight: 1.5 }}>
+        Smart calorie tracking,<br />powered by AI
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 300 }}>
+        <PrimaryBtn onClick={() => setPhase("signup")} style={{ padding: "17px 32px", fontSize: 16, borderRadius: 99 }}>
+          Create account →
+        </PrimaryBtn>
+        <button onClick={() => setPhase("login")} style={{ width: "100%", padding: "15px 32px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+          Log in
+        </button>
+      </div>
+    </div>
+  );
+
+  if (phase === "signup") return (
+    <SignupScreen onBack={() => setPhase("splash")} onDone={creds => { setForm(p => ({...p, ...creds})); setPhase("onboard"); }} />
+  );
+
+  if (phase === "login") return (
+    <LoginScreen onBack={() => setPhase("splash")} onReset={reset} onSuccess={async (saved) => {
+      setProfile(saved.profile);
+      setLogState(saved.log || {});
+      try { const r = localStorage.getItem("nutriai_activity"); setActivityData(r ? JSON.parse(r) : {}); } catch(_) {}
+      setPhase("app");
+    }} />
+  );
+
+  if (phase === "onboard") return (
+    <>
+      {step === 1 && <Step1 data={form} set={setField} onNext={() => setStep(2)} onBack={() => setPhase("signup")} />}
+      {step === 2 && <Step2 data={form} set={setField} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+      {step === 3 && <Step3 data={form} set={setField} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+      {step === 4 && <Step4 data={form} set={setField} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
+      {step === 5 && <Step5 data={form} set={setField} onNext={finishOnboarding} onBack={() => setStep(4)} />}
+    </>
+  );
+
+  if (phase === "results") return <Results profile={{ ...form, age: calcAge(form.dob) }} plan={plan} onStart={launchApp} />;
+  if (phase === "app")     return <MainApp profile={profile} log={log} setLog={setLog} activityData={activityData} setActivityData={setActivityData} onReset={logout} onHardReset={reset} updateProfile={updateProfile} />;
+  return null;
+}
+  ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>
