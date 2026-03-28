@@ -23,7 +23,11 @@
     /* Prevent iOS zoom on input focus — must be 16px+ */
     input, select, textarea { font-size: 16px !important; }
     /* Smooth scrolling */
-    html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+    html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overflow-x: hidden; }
+    /* Prevent date input overflow on iOS */
+    input[type="date"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
+    /* Prevent any element from exceeding screen width */
+    body { overflow-x: hidden; }
   </style>
 </head>
 <body>
@@ -255,11 +259,11 @@ function Input({ label, ...props }) {
     <div style={{ marginBottom: 16 }}>
       {label && <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>{label}</div>}
       <input {...props} style={{
-        width: "100%", padding: "13px 16px", borderRadius: 12,
+        width: "100%", maxWidth: "100%", padding: "13px 16px", borderRadius: 12,
         border: "1.5px solid rgba(255,255,255,0.08)",
         background: "rgba(255,255,255,0.05)", color: "#fff",
-        fontSize: 15, outline: "none", boxSizing: "border-box",
-        fontFamily: "inherit", colorScheme: "dark",
+        fontSize: 16, outline: "none", boxSizing: "border-box",
+        fontFamily: "inherit", colorScheme: "dark", display: "block",
         ...(props.style || {})
       }} />
     </div>
@@ -318,8 +322,8 @@ function Seg({ options, value, onChange }) {
 function StepShell({ step, total, title, sub, children, onNext, onBack, nextLabel = "Continue →" }) {
   const pct = (step / total) * 100;
   return (
-    <div style={{ minHeight: "100vh", background: "#0f0f11", display: "flex", flexDirection: "column", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, display: "flex", flexDirection: "column", padding: "0 22px 36px" }}>
+    <div style={{ minHeight: "100vh", background: "#0f0f11", display: "flex", flexDirection: "column", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", width: "100%", flex: 1, display: "flex", flexDirection: "column", padding: "0 22px 36px", overflow: "hidden" }}>
         {/* Progress */}
         <div style={{ padding: "18px 0 12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
