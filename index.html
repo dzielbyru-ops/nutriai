@@ -4,15 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NutriAI</title>
-  <style>* { margin: 0; padding: 0; box-sizing: border-box; }</style>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f11; }
+    #root { min-height: 100vh; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script type="text/babel" data-presets="react">
-import { useState, useEffect, useRef } from "react";
+
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
 
 // ─── Icon system — simple 2D monochrome SVG icons ───────────────
 function Icon({ name, size = 18, color = "currentColor", strokeWidth = 1.8 }) {
@@ -2557,7 +2563,9 @@ function App() {
   if (phase === "app")     return <MainApp profile={profile} log={log} setLog={setLog} activityData={activityData} setActivityData={setActivityData} onReset={logout} onHardReset={reset} updateProfile={updateProfile} />;
   return null;
 }
-  ReactDOM.render(React.createElement(App), document.getElementById('root'));
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
