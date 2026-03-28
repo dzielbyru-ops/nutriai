@@ -581,7 +581,7 @@ function Step4({ data, set, onNext, onBack }) {
 
 function Step5({ data, set, onNext, onBack }) {
   return (
-    <StepShell step={5} total={5} title="How active are you?" sub="Determines your total daily energy expenditure (TDEE)" onNext={onNext} onBack={onBack} nextLabel="Calculate my plan ✨">
+    <StepShell step={5} total={5} title="How active are you?" sub="How active you are affects how many calories you burn each day" onNext={onNext} onBack={onBack} nextLabel="Calculate my plan ✨">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {ACTIVITIES.map(a => (
           <Chip key={a.mult} active={data.actMult === a.mult} onClick={() => { set("actMult", a.mult); set("actLabel", a.label); }}>
@@ -665,20 +665,43 @@ function Results({ profile, plan, onStart }) {
           </div>
         )}
 
-        {/* Stats grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-          {[
-            { label: "BMR",         val: plan.bmr,         unit: "kcal", note: "Calories at rest" },
-            { label: "TDEE",        val: plan.tdee,        unit: "kcal", note: "Total daily burn" },
-            { label: "Daily deficit",val: plan.dailyDeficit,unit: "kcal", note: "Below maintenance" },
-            { label: "BMI",         val: plan.bmi,         unit: "",     note: bmiLabel, noteColor: bmiColor },
-          ].map(s => (
-            <div key={s.label} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "16px 14px", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>{s.label}</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{s.val}<span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginLeft: 3 }}>{s.unit}</span></div>
-              <div style={{ fontSize: 11, color: s.noteColor || "rgba(255,255,255,0.35)", marginTop: 4 }}>{s.note}</div>
+        {/* Plain English stats */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+
+          {/* Calories to eat */}
+          <div style={{ background: "rgba(249,115,22,0.08)", borderRadius: 14, padding: "16px", border: "1px solid rgba(249,115,22,0.2)" }}>
+            <div style={{ fontSize: 11, color: "#f97316", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>🍽️ Eat this much every day</div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: "-1px" }}>{goal} <span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>kcal / day</span></div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginTop: 6, lineHeight: 1.5 }}>
+              Your body burns <strong style={{ color: "#fff" }}>{plan.tdee} kcal</strong> naturally each day just by living and moving. Eating {goal} kcal creates the deficit you need to reach your goal.
             </div>
-          ))}
+          </div>
+
+          {/* Do I need to work out? */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>🏃 Do I need to work out?</div>
+            <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>
+              <strong style={{ color: "#fff" }}>Exercise is a bonus, not required.</strong> Your calorie target already accounts for your activity level. Any workout you do lets you eat a little more that day — the app adjusts automatically.
+            </div>
+          </div>
+
+          {/* BMI plain */}
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: bmiColor }}>{plan.bmi}</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>BMI</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: bmiColor, marginBottom: 4 }}>{bmiLabel}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>
+                {plan.bmi < 18.5 ? "You're below a healthy weight. Focus on nourishing meals." :
+                 plan.bmi < 25  ? "You're in a healthy range. Great foundation to work from!" :
+                 plan.bmi < 30  ? "Slightly above healthy range. Your plan will help." :
+                 "Above healthy range. Stick to your plan — small steps add up!"}
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Macros */}
