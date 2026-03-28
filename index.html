@@ -2385,10 +2385,13 @@ function MaskedInput({ value, onChange, placeholder, style }) {
 function SignupScreen({ onBack, onDone }) {
   const [su, setSu] = useState({ email: "", password: "", secretQ: SECRET_QUESTIONS[0], secretA: "" });
   const [err, setErr] = useState("");
-  const handle = () => {
+  const handle = async () => {
     if (!su.email.includes("@")) { setErr("Please enter a valid email"); return; }
     if (su.password.length < 4) { setErr("Password must be at least 4 characters"); return; }
     if (!su.secretA.trim()) { setErr("Please answer the secret question"); return; }
+    // Prevent duplicate accounts
+    const existing = await loadData();
+    if (existing?.profile?.email) { setErr("An account already exists. Please log in instead."); return; }
     onDone({ email: su.email, password: su.password, secretQ: su.secretQ, secretA: su.secretA.trim().toLowerCase() });
   };
   return (
@@ -2580,9 +2583,11 @@ function App() {
     (async () => {
       try {
         const saved = await loadData();
-        if (saved?.profile?.goal) {
+        if (saved?.profile?.email) {
+          // Account exists — go straight to login, skip splash
           setPhase("login");
         } else {
+          // No account yet — show splash with Create/Login options
           setPhase("splash");
         }
         try {
