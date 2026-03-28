@@ -649,6 +649,7 @@ function Results({ profile, plan, onStart }) {
 // ════════════════════════════════════════════
 function MainApp({ profile, log, setLog, activityData, setActivityData, onReset, onHardReset, updateProfile }) {
   const [tab, setTab] = useState("today");
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [tab]);
   const [preview, setPreview] = useState(null);
   const [b64, setB64] = useState(null);
   const [scanResult, setScanResult] = useState(null);
@@ -2466,6 +2467,9 @@ function App() {
   const [plan, setPlan]       = useState(null);
   const [log, setLogState]    = useState({});
   const [activityData, setActivityData] = useState({});
+
+  // Scroll to top on every page/step change
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [phase, step]);
 
   const updateProfile = (updated) => {
     setProfile(updated);
