@@ -2563,6 +2563,7 @@ function LoginScreen({ onBack, onSuccess, onReset }) {
 // ════════════════════════════════════════════
 function App() {
   const [phase, setPhase] = useState("boot");
+  const [hasAccount, setHasAccount] = useState(false);
   const [step, setStep]   = useState(1);
   const [form, setForm]   = useState({ name: "", email: "", password: "", secretQ: "What was the name of your first pet?", secretA: "", gender: "female", dob: "", heightCm: 0, weightKg: "", targetKg: "", months: 3, actMult: 1.2, actLabel: "Sedentary" });
   const [profile, setProfile] = useState(null);
@@ -2584,10 +2585,10 @@ function App() {
       try {
         const saved = await loadData();
         if (saved?.profile?.email) {
-          // Account exists — go straight to login, skip splash
+          setHasAccount(true);
           setPhase("login");
         } else {
-          // No account yet — show splash with Create/Login options
+          setHasAccount(false);
           setPhase("splash");
         }
         try {
@@ -2619,6 +2620,7 @@ function App() {
   const launchApp = (finalProfile) => {
     saveData({ profile: finalProfile, log });
     setProfile(finalProfile);
+    setHasAccount(true);
     setPhase("app");
   };
 
@@ -2632,6 +2634,7 @@ function App() {
     setProfile(null); setPlan(null); setLogState({}); setActivityData({});
     try { localStorage.removeItem(STORE_KEY); localStorage.removeItem("nutriai_activity"); localStorage.removeItem("nutriai_weighins"); localStorage.removeItem(XP_KEY); localStorage.removeItem(CHALLENGES_KEY); } catch(_) {}
     setStep(1); setForm({ name: "", gender: "female", dob: "", heightCm: 0, weightKg: "", targetKg: "", months: 3, actMult: 1.2, actLabel: "Sedentary" });
+    setHasAccount(false);
     setPhase("splash");
   };
 
@@ -2650,12 +2653,25 @@ function App() {
         Smart calorie tracking,<br />powered by AI
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 300 }}>
-        <PrimaryBtn onClick={() => setPhase("signup")} style={{ padding: "17px 32px", fontSize: 16, borderRadius: 99 }}>
-          Create account →
-        </PrimaryBtn>
-        <button onClick={() => setPhase("login")} style={{ width: "100%", padding: "15px 32px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
-          Log in
-        </button>
+        {!hasAccount ? (
+          <>
+            <PrimaryBtn onClick={() => setPhase("signup")} style={{ padding: "17px 32px", fontSize: 16, borderRadius: 99 }}>
+              Create account →
+            </PrimaryBtn>
+            <button onClick={() => setPhase("login")} style={{ width: "100%", padding: "15px 32px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.15)", background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+              Already have an account? Log in
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>
+              You already have an account 👋
+            </div>
+            <PrimaryBtn onClick={() => setPhase("login")} style={{ padding: "17px 32px", fontSize: 16, borderRadius: 99 }}>
+              Log in →
+            </PrimaryBtn>
+          </>
+        )}
       </div>
     </div>
   );
