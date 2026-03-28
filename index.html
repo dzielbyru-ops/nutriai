@@ -14,12 +14,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>NutriAI</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0f0f11; }
+    body { background: #0f0f11; -webkit-text-size-adjust: 100%; }
     #root { min-height: 100vh; }
+    /* Prevent iOS zoom on input focus — must be 16px+ */
+    input, select, textarea { font-size: 16px !important; }
+    /* Smooth scrolling */
+    html { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
   </style>
 </head>
 <body>
@@ -2578,6 +2582,17 @@ function App() {
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
+
+    // Reset zoom when keyboard closes on iOS
+    document.addEventListener('focusout', function() {
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        setTimeout(() => {
+          const mv = document.querySelector('meta[name=viewport]');
+          mv.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }, 100);
+      }
+    });
+
   </script>
 </body>
 </html>
