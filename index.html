@@ -379,11 +379,11 @@ function Step2({ data, set, onNext, onBack }) {
   const currentYear = now.getFullYear();
   const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-  // Parse existing dob if set
-  const parts = data.dob ? data.dob.split("-") : ["", "", ""];
-  const selYear  = parts[0] || "";
-  const selMonth = parts[1] || "";
-  const selDay   = parts[2] || "";
+  // Local state for each dropdown so selections persist independently
+  const initParts = data.dob ? data.dob.split("-") : ["","",""];
+  const [selYear,  setSelYear]  = useState(initParts[0] || "");
+  const [selMonth, setSelMonth] = useState(initParts[1] || "");
+  const [selDay,   setSelDay]   = useState(initParts[2] || "");
 
   const daysInMonth = selYear && selMonth ? new Date(parseInt(selYear), parseInt(selMonth), 0).getDate() : 31;
   const days   = Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -391,9 +391,9 @@ function Step2({ data, set, onNext, onBack }) {
   const years  = Array.from({ length: 100 }, (_, i) => String(currentYear - 10 - i));
 
   const update = (y, m, d) => {
-    if (y && m && d) {
-      set("dob", y + "-" + m + "-" + d);
-    }
+    // Always update local state so dropdowns don't reset
+    if (y && m && d) set("dob", y + "-" + m + "-" + d);
+    else set("dob", ""); // partial — clear dob so validation catches it
     setErr("");
   };
 
@@ -402,14 +402,16 @@ function Step2({ data, set, onNext, onBack }) {
     border: "1.5px solid rgba(255,255,255,0.08)",
     background: "rgba(255,255,255,0.05)", color: "#fff",
     fontSize: 16, outline: "none", boxSizing: "border-box",
-    fontFamily: "inherit", colorScheme: "dark", appearance: "none",
-    WebkitAppearance: "none", textAlign: "center", cursor: "pointer",
-    minWidth: 0,
+    fontFamily: "inherit", colorScheme: "dark",
+    textAlign: "center", cursor: "pointer", minWidth: 0,
   };
 
-  const age = data.dob && data.dob.length === 10 ? calcAge(data.dob) : null;
+  // Show age as soon as year + month + day are all picked
+  const previewDob = selYear && selMonth && selDay ? selYear + "-" + selMonth + "-" + selDay : null;
+  const age = previewDob ? calcAge(previewDob) : null;
+
   const go = () => {
-    if (!data.dob || !age || age < 10 || age > 110) { setErr("Please enter a valid date of birth"); return; }
+    if (!previewDob || !age || age < 10 || age > 110) { setErr("Please enter a valid date of birth"); return; }
     setErr(""); onNext();
   };
 
@@ -418,29 +420,29 @@ function Step2({ data, set, onNext, onBack }) {
       <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Date of birth</div>
       <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 16 }}>
         {/* Day */}
-        <select value={selDay} onChange={e => update(selYear, selMonth, e.target.value)} style={selStyle}>
+        <select value={selDay} onChange={e => { setSelDay(e.target.value); update(selYear, selMonth, e.target.value); }} style={selStyle}>
           <option value="" style={{ background: "#1a1a1e" }}>Day</option>
           {days.map(d => <option key={d} value={d} style={{ background: "#1a1a1e" }}>{parseInt(d)}</option>)}
         </select>
         {/* Month */}
-        <select value={selMonth} onChange={e => update(selYear, e.target.value, selDay)} style={{ ...selStyle, flex: 2 }}>
+        <select value={selMonth} onChange={e => { setSelMonth(e.target.value); update(selYear, e.target.value, selDay); }} style={{ ...selStyle, flex: 2 }}>
           <option value="" style={{ background: "#1a1a1e" }}>Month</option>
           {months.map(m => <option key={m.val} value={m.val} style={{ background: "#1a1a1e" }}>{m.label}</option>)}
         </select>
         {/* Year */}
-        <select value={selYear} onChange={e => update(e.target.value, selMonth, selDay)} style={{ ...selStyle, flex: 1.5 }}>
+        <select value={selYear} onChange={e => { setSelYear(e.target.value); update(e.target.value, selMonth, selDay); }} style={{ ...selStyle, flex: 1.5 }}>
           <option value="" style={{ background: "#1a1a1e" }}>Year</option>
           {years.map(y => <option key={y} value={y} style={{ background: "#1a1a1e" }}>{y}</option>)}
         </select>
       </div>
       {err && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
-      {age !== null && !err && (
+      {age !== null && age >= 10 && age <= 110 && !err && (
         <div style={{ background: "rgba(249,115,22,0.1)", border: "1.5px solid rgba(249,115,22,0.25)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, marginTop: 4 }}>
           <Icon name="calendar" size={28} color="#f97316"/>
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#f0f0f0" }}>{age} years old</div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
-              {new Date(data.dob + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+              {new Date(previewDob + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
             </div>
           </div>
         </div>
