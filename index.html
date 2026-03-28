@@ -398,12 +398,13 @@ function Step2({ data, set, onNext, onBack }) {
   };
 
   const selStyle = {
-    flex: 1, padding: "13px 8px", borderRadius: 12,
-    border: "1.5px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.05)", color: "#fff",
-    fontSize: 16, outline: "none", boxSizing: "border-box",
+    flex: 1, padding: "14px 10px", borderRadius: 12,
+    border: "1.5px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.08)", color: "#fff",
+    fontSize: 16, fontWeight: 600, outline: "none", boxSizing: "border-box",
     fontFamily: "inherit", colorScheme: "dark",
-    textAlign: "center", cursor: "pointer", minWidth: 0,
+    cursor: "pointer", minWidth: 0, width: "100%",
+    WebkitAppearance: "none", MozAppearance: "none", appearance: "none",
   };
 
   // Show age as soon as year + month + day are all picked
@@ -417,23 +418,43 @@ function Step2({ data, set, onNext, onBack }) {
 
   return (
     <StepShell step={2} total={5} title="When were you born?" sub="Age changes your metabolic rate calculation" onNext={go} onBack={onBack}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Date of birth</div>
-      <div style={{ display: "flex", gap: 8, width: "100%", marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.4fr", gap: 8, width: "100%", marginBottom: 16 }}>
         {/* Day */}
-        <select value={selDay} onChange={e => { setSelDay(e.target.value); update(selYear, selMonth, e.target.value); }} style={selStyle}>
-          <option value="" style={{ background: "#1a1a1e" }}>Day</option>
-          {days.map(d => <option key={d} value={d} style={{ background: "#1a1a1e" }}>{parseInt(d)}</option>)}
-        </select>
+        <div style={{ position: "relative" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Day</div>
+          <div style={{ position: "relative" }}>
+            <select value={selDay} onChange={e => { setSelDay(e.target.value); update(selYear, selMonth, e.target.value); }}
+              style={{ ...selStyle, paddingRight: 28 }}>
+              <option value="" style={{ background: "#1a1a1e" }}>--</option>
+              {days.map(d => <option key={d} value={d} style={{ background: "#1a1a1e" }}>{parseInt(d)}</option>)}
+            </select>
+            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#f97316", fontSize: 10 }}>▼</div>
+          </div>
+        </div>
         {/* Month */}
-        <select value={selMonth} onChange={e => { setSelMonth(e.target.value); update(selYear, e.target.value, selDay); }} style={{ ...selStyle, flex: 2 }}>
-          <option value="" style={{ background: "#1a1a1e" }}>Month</option>
-          {months.map(m => <option key={m.val} value={m.val} style={{ background: "#1a1a1e" }}>{m.label}</option>)}
-        </select>
+        <div style={{ position: "relative" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Month</div>
+          <div style={{ position: "relative" }}>
+            <select value={selMonth} onChange={e => { setSelMonth(e.target.value); update(selYear, e.target.value, selDay); }}
+              style={{ ...selStyle, paddingRight: 28 }}>
+              <option value="" style={{ background: "#1a1a1e" }}>--</option>
+              {months.map(m => <option key={m.val} value={m.val} style={{ background: "#1a1a1e" }}>{m.label}</option>)}
+            </select>
+            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#f97316", fontSize: 10 }}>▼</div>
+          </div>
+        </div>
         {/* Year */}
-        <select value={selYear} onChange={e => { setSelYear(e.target.value); update(e.target.value, selMonth, selDay); }} style={{ ...selStyle, flex: 1.5 }}>
-          <option value="" style={{ background: "#1a1a1e" }}>Year</option>
-          {years.map(y => <option key={y} value={y} style={{ background: "#1a1a1e" }}>{y}</option>)}
-        </select>
+        <div style={{ position: "relative" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Year</div>
+          <div style={{ position: "relative" }}>
+            <select value={selYear} onChange={e => { setSelYear(e.target.value); update(e.target.value, selMonth, selDay); }}
+              style={{ ...selStyle, paddingRight: 28 }}>
+              <option value="" style={{ background: "#1a1a1e" }}>--</option>
+              {years.map(y => <option key={y} value={y} style={{ background: "#1a1a1e" }}>{y}</option>)}
+            </select>
+            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "#f97316", fontSize: 10 }}>▼</div>
+          </div>
+        </div>
       </div>
       {err && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{err}</div>}
       {age !== null && age >= 10 && age <= 110 && !err && (
