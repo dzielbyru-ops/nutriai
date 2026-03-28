@@ -2664,11 +2664,8 @@ function App() {
           </>
         ) : (
           <>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>
-              You already have an account 👋
-            </div>
             <PrimaryBtn onClick={() => setPhase("login")} style={{ padding: "17px 32px", fontSize: 16, borderRadius: 99 }}>
-              Log in →
+              Welcome back → Log in
             </PrimaryBtn>
           </>
         )}
@@ -2677,11 +2674,11 @@ function App() {
   );
 
   if (phase === "signup") return (
-    <SignupScreen onBack={() => setPhase("splash")} onDone={creds => { setForm(p => ({...p, ...creds})); setPhase("onboard"); }} />
+    <SignupScreen onBack={async () => { const s = await loadData(); setHasAccount(!!(s?.profile?.email)); setPhase("splash"); }} onDone={creds => { setForm(p => ({...p, ...creds})); setPhase("onboard"); }} />
   );
 
   if (phase === "login") return (
-    <LoginScreen onBack={() => setPhase("splash")} onReset={reset} onSuccess={async (saved) => {
+    <LoginScreen onBack={async () => { const s = await loadData(); setHasAccount(!!(s?.profile?.email)); setPhase("splash"); }} onReset={reset} onSuccess={async (saved) => {
       setProfile(saved.profile);
       setLogState(saved.log || {});
       try { const r = localStorage.getItem("nutriai_activity"); setActivityData(r ? JSON.parse(r) : {}); } catch(_) {}
